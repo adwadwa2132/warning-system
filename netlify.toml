@@ -1,5 +1,5 @@
 [build]
-  command = "npm install tailwindcss postcss autoprefixer --save-dev && CI=false npm run build"
+  command = "npm install && npm install tailwindcss postcss autoprefixer --save-dev && npx tailwindcss init -p && CI=false npm run build"
   publish = ".next"
 
 [build.environment]
