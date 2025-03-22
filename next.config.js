@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   // Disable type checking during build
   typescript: {
@@ -10,20 +12,24 @@ const nextConfig = {
     domains: ['openweathermap.org'],
   },
   
-  // Configure webpack to handle SVG files
+  // Configure webpack to handle SVG files and path aliases
   webpack(config) {
+    // SVG handling
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     });
 
-    // Fix for leaflet and leaflet-draw import issues
+    // Explicitly set up path aliases
     config.resolve.alias = {
       ...config.resolve.alias,
+      '@': path.resolve(__dirname),
       'leaflet-draw': require.resolve('leaflet-draw')
     };
+    
     return config;
   },
+  
   // Enable transpile modules for leaflet packages
   transpilePackages: ['react-leaflet', 'leaflet', 'leaflet-draw'],
 };
