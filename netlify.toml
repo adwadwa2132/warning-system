@@ -1,5 +1,5 @@
 [build]
-  command = "npx next build --no-lint"
+  command = "npm install --save-dev typescript @types/react @types/node && npx next build --no-lint"
   publish = ".next"
 
 [build.environment]
