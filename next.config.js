@@ -5,7 +5,6 @@ const nextConfig = {
   // Disable type checking during build
   typescript: {
     ignoreBuildErrors: true,
-    tsconfigPath: false,
   },
   
   // Allow images from external domains
