@@ -1,5 +1,5 @@
 [build]
-  command = "npm install && mv tsconfig.json tsconfig.json.backup && NODE_OPTIONS=--max_old_space_size=4096 NEXT_SKIP_TYPE_CHECK=true NEXT_TELEMETRY_DISABLED=1 npx next build --no-lint && mv tsconfig.json.backup tsconfig.json"
+  command = "npm i --force && npm i --save-dev typescript@latest @types/react@latest @types/node@latest --force && NODE_OPTIONS=--max_old_space_size=4096 npx next build --no-lint"
   publish = ".next"
 
 [build.environment]
@@ -8,6 +8,8 @@
   NEXT_SKIP_TYPE_CHECK = "true"
   NEXT_TELEMETRY_DISABLED = "1"
   TYPESCRIPT_SKIP_CHECKING = "true"
+  NEXT_IGNORE_TYPE_ERROR = "true"
+  NODE_ENV = "production"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

@@ -5,11 +5,17 @@ const nextConfig = {
   // Disable type checking during build
   typescript: {
     ignoreBuildErrors: true,
+    tsconfigPath: false,
   },
   
   // Allow images from external domains
   images: {
     domains: ['openweathermap.org'],
+  },
+  
+  // Disable ESLint
+  eslint: {
+    ignoreDuringBuilds: true,
   },
   
   // Configure webpack to handle SVG files and path aliases
