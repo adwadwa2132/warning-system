@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "NEXT_SKIP_TYPE_CHECK=true next build",
-    "build:win": "$env:NEXT_SKIP_TYPE_CHECK=1 && next build",
+    "build": "next build",
     "build:skiptype": "next build --no-lint",
     "start": "next start",
     "lint": "next lint"
@@ -19,16 +18,14 @@
     "react": "^19.0.0",
     "react-datepicker": "^8.2.1",
     "react-dom": "^19.0.0",
-    "react-leaflet": "^5.0.0"
-  },
-  "devDependencies": {
+    "react-leaflet": "^5.0.0",
+    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-datepicker": "^7.0.0",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.3",
-    "typescript": "^5"
+    "tailwindcss": "^3.4.3"
   }
 }
