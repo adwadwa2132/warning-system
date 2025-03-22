@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Weather Warning System
 
-## Getting Started
+A map-based warning system for creating and displaying weather warnings with radar overlays.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Interactive map with drawing tools to create custom warnings
+- Weather radar overlays (RainViewer on main page, MRMS with advanced products on admin page)
+- Warning management system with severity levels and expiration times
+- Mobile-responsive design
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Local Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository
+2. Install dependencies:
+   ```
+   cd warning-system
+   npm install
+   ```
+3. Create a `.env.local` file with your MongoDB connection string:
+   ```
+   MONGODB_URI=mongodb+srv://your-connection-string
+   ```
+4. Run the development server:
+   ```
+   npm run dev
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploying to Netlify
 
-## Learn More
+### Prerequisites
 
-To learn more about Next.js, take a look at the following resources:
+1. A MongoDB Atlas account (or other MongoDB provider)
+2. A Netlify account
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Deployment Steps
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Push your code to a Git repository (GitHub, GitLab, etc.)
 
-## Deploy on Vercel
+2. Log in to Netlify and click "New site from Git"
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. Connect to your Git provider and select your repository
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. Configure the build settings:
+   - Build command: `NEXT_SKIP_TYPE_CHECK=true npm run build`
+   - Publish directory: `.next`
+
+5. Add the following environment variables in Netlify:
+   - `MONGODB_URI`: Your MongoDB connection string
+   - `NEXT_SKIP_TYPE_CHECK`: `true`
+
+6. Deploy the site
+
+7. Install the Netlify Next.js plugin:
+   ```
+   netlify plugins:install @netlify/plugin-nextjs
+   ```
+
+8. For serverless functions to work properly (handling API routes), make sure to enable the Next.js Runtime:
+   - Go to Site settings > Build & deploy > Environment > Environment variables
+   - Add `NEXT_RUNTIME=nodejs18.x`
+
+### Known Issues and Workarounds
+
+When deploying to Netlify, you might encounter TypeScript errors related to the `react-datepicker` library. To work around this:
+
+1. We've set up the build command to skip type checking using the `NEXT_SKIP_TYPE_CHECK=true` environment variable
+2. This is already configured in the `netlify.toml` file
+3. If you're using Windows locally, use the `npm run build:win` command instead, which sets the environment variable correctly for PowerShell
+
+### Using Netlify CLI for Local Testing
+
+1. Install the Netlify CLI:
+   ```
+   npm install netlify-cli -g
+   ```
+
+2. Link your local project to your Netlify site:
+   ```
+   netlify link
+   ```
+
+3. Test your site locally:
+   ```
+   netlify dev
+   ```
+
+## Important Notes
+
+- Ensure your MongoDB database is accessible from Netlify's IP addresses
+- The database must be configured to accept connections from any IP or from Netlify's IP range
+- Consider adding authentication to the admin page for a production deployment 
