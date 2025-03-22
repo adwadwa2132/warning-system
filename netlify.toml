@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build:skiptype"
+  command = "npx next build --no-lint"
   publish = ".next"
 
 [build.environment]
