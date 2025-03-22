@@ -457,7 +457,8 @@ function MapContent({
   const map = useMap();
   // Track if the control setup has been completed to avoid multiple controls
   const setupCompletedRef = useRef(false);
-  const [drawControl, setDrawControl] = useState<L.Control.Draw | null>(null);
+  // Use any type to avoid TypeScript errors with leaflet-draw
+  const [drawControl, setDrawControl] = useState<any>(null);
   // Create a ref to store warning layers for cleanup
   const warningLayersRef = useRef<L.Polygon[]>([]);
   
@@ -473,7 +474,9 @@ function MapContent({
         map.removeLayer(layer);
       });
     }
-
+    
+    warningLayersRef.current = [];
+    
     // Create layers for each warning
     const newWarningLayers: L.Polygon[] = [];
 
@@ -489,26 +492,56 @@ function MapContent({
         
         let polygonData = null;
         
+        // Log the type and structure of polygon data for debugging
+        console.log('Polygon type:', typeof warning.polygon, 'Structure:', JSON.stringify(warning.polygon).substring(0, 100));
+        
         // Handle different possible polygon formats from the database
         if (typeof warning.polygon === 'object') {
-          if (warning.polygon.coordinates && Array.isArray(warning.polygon.coordinates)) {
-            // Standard GeoJSON format: polygon.coordinates is an array of arrays of arrays
+          // Case 1: Standard GeoJSON format from MongoDB
+          if (warning.polygon.type === 'Polygon' && warning.polygon.coordinates) {
+            polygonData = warning.polygon.coordinates[0].map((coord: number[]) => [coord[1], coord[0]]);
+            console.log('Extracted from GeoJSON with type property:', polygonData);
+          }
+          // Case 2: Object with coordinates array
+          else if (warning.polygon.coordinates && Array.isArray(warning.polygon.coordinates)) {
             if (Array.isArray(warning.polygon.coordinates[0]) && Array.isArray(warning.polygon.coordinates[0][0])) {
               // Format: [[[lon, lat], [lon, lat], ...]]
               polygonData = warning.polygon.coordinates[0].map((coord: number[]) => [coord[1], coord[0]]);
-              console.log('Extracted coordinates from GeoJSON format (type 1):', polygonData);
+              console.log('Extracted from nested coordinates array:', polygonData);
             } 
-            // Format: [[lon, lat], [lon, lat], ...]
             else if (Array.isArray(warning.polygon.coordinates[0]) && typeof warning.polygon.coordinates[0][0] === 'number') {
+              // Format: [[lon, lat], [lon, lat], ...]
               polygonData = warning.polygon.coordinates.map((coord: number[]) => [coord[1], coord[0]]);
-              console.log('Extracted coordinates from GeoJSON format (type 2):', polygonData);
+              console.log('Extracted from flat coordinates array:', polygonData);
             }
           }
-        } else if (Array.isArray(warning.polygon)) {
-          // Direct array of coordinates
-          if (Array.isArray(warning.polygon[0]) && typeof warning.polygon[0][0] === 'number') {
+        }
+        // Case 3: Direct array format
+        else if (Array.isArray(warning.polygon)) {
+          // Check if it's a nested array of arrays with first element being an array
+          if (Array.isArray(warning.polygon[0]) && Array.isArray(warning.polygon[0][0])) {
+            // Format: [[[lon, lat], [lon, lat], ...]]
+            polygonData = warning.polygon[0].map((coord: number[]) => [coord[1], coord[0]]);
+            console.log('Extracted from nested polygon array:', polygonData);
+          }
+          // Check if it's a simple array of coordinates
+          else if (Array.isArray(warning.polygon[0]) && typeof warning.polygon[0][0] === 'number') {
+            // Format: [[lon, lat], [lon, lat], ...]
             polygonData = warning.polygon.map((coord: number[]) => [coord[1], coord[0]]);
-            console.log('Extracted coordinates from direct array format:', polygonData);
+            console.log('Extracted from direct array format:', polygonData);
+          }
+        }
+        
+        // Additional fallback: try parsing if it's a string
+        if (!polygonData && typeof warning.polygon === 'string') {
+          try {
+            const parsed = JSON.parse(warning.polygon);
+            if (Array.isArray(parsed)) {
+              polygonData = parsed.map((coord: number[]) => [coord[1], coord[0]]);
+              console.log('Extracted from parsed string:', polygonData);
+            }
+          } catch (e) {
+            console.warn('Failed to parse polygon string:', e);
           }
         }
         
@@ -571,7 +604,8 @@ interface DrawControlProps {
 // Custom control for drawing on the map
 const DrawControl = ({ onPolygonCreated }: DrawControlProps) => {
   const map = useMap();
-  const [drawControl, setDrawControl] = useState<L.Control | null>(null);
+  // Use any type to avoid TypeScript errors with leaflet-draw
+  const [drawControl, setDrawControl] = useState<any>(null);
   const [drawnItems, setDrawnItems] = useState<L.FeatureGroup | null>(null);
   
   // Use a ref to track if setup has been completed to prevent multiple initializations
@@ -615,8 +649,9 @@ const DrawControl = ({ onPolygonCreated }: DrawControlProps) => {
         setDrawnItems(newDrawnItems);
         
         // Create the draw control with the feature group
+        // @ts-ignore - Using L.Control.Draw which may not be properly typed
         const newDrawControl = new L.Control.Draw({
-          // @ts-ignore
+          // @ts-ignore - position property may cause type error
           position: 'topright',
           draw: {
             rectangle: false,
@@ -639,6 +674,7 @@ const DrawControl = ({ onPolygonCreated }: DrawControlProps) => {
         setDrawControl(newDrawControl);
         
         // Handle created polygons
+        // @ts-ignore - L.Draw.Event may not be properly typed
         map.on(L.Draw.Event.CREATED, (e: any) => {
           const layer = e.layer;
           newDrawnItems.addLayer(layer);
@@ -654,31 +690,25 @@ const DrawControl = ({ onPolygonCreated }: DrawControlProps) => {
           onPolygonCreated([[coordinates]]);
         });
         
-        // Mark setup as completed
         setupCompleted.current = true;
       } catch (error) {
-        console.error('Failed to initialize Leaflet Draw:', error);
+        console.error('Error setting up draw control:', error);
       }
     };
     
     setupDraw();
     
-    // Cleanup on unmount
+    // Clean up function
     return () => {
       if (map && drawControl) {
+        // @ts-ignore - Leaflet typings aren't complete
         map.removeControl(drawControl);
       }
       
-      if (map && drawnItems) {
-        map.removeLayer(drawnItems);
-      }
-      
       if (map && L.Draw && L.Draw.Event) {
+        // @ts-ignore - L.Draw.Event may not be properly typed
         map.off(L.Draw.Event.CREATED);
       }
-      
-      // Reset setup flag when component unmounts
-      setupCompleted.current = false;
     };
   }, [map, onPolygonCreated]);
   
