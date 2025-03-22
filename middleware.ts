@@ -1,25 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// This function will be called on all requests
+// This middleware will ONLY run on admin routes
 export function middleware(request: NextRequest) {
-  // Check if the request is for the admin page
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization');
-    
-    // Check if the authorization header exists and is valid
-    if (!authHeader || !isValidAuthHeader(authHeader)) {
-      // Return a response requesting authentication
-      return new NextResponse('Authentication required', {
-        status: 401,
-        headers: {
-          'WWW-Authenticate': 'Basic realm="Warning System Admin"'
-        }
-      });
-    }
+  // Double-check this is an admin route
+  if (!request.nextUrl.pathname.startsWith('/admin')) {
+    return NextResponse.next();
   }
   
-  // If no admin page or authentication is valid, continue with the request
+  // Get the authorization header
+  const authHeader = request.headers.get('authorization');
+  
+  // Check if the authorization header exists and is valid
+  if (!authHeader || !isValidAuthHeader(authHeader)) {
+    // Return a response requesting authentication
+    return new NextResponse('Authentication required', {
+      status: 401,
+      headers: {
+        'WWW-Authenticate': 'Basic realm="Warning System Admin"'
+      }
+    });
+  }
+  
+  // If authentication is valid, continue with the request
   return NextResponse.next();
 }
 
@@ -49,6 +51,7 @@ function isValidAuthHeader(authHeader: string): boolean {
 }
 
 // Configure which paths this middleware will run on
+// This is VERY important - it must be exact
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/admin', '/admin/:path*'],
 }; 
