@@ -1,5 +1,5 @@
 [build]
-  command = "npm install && npm install --save-dev tailwindcss postcss autoprefixer typescript @types/react @types/node && npx next build --no-lint"
+  command = "npm install && NODE_OPTIONS=--max_old_space_size=4096 NEXT_SKIP_TYPE_CHECK=true NEXT_TELEMETRY_DISABLED=1 npx next build --no-lint"
   publish = ".next"
 
 [build.environment]
