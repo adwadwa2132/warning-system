@@ -4,7 +4,7 @@
 
 [build.environment]
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
-  NODE_VERSION = "18.17.0"
+  NODE_VERSION = "20.10.0"
   NEXT_SKIP_TYPE_CHECK = "true"
 
 [[plugins]]
