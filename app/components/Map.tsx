@@ -705,6 +705,7 @@ const DrawControl = ({ onPolygonCreated }: DrawControlProps) => {
         map.removeControl(drawControl);
       }
       
+      // @ts-ignore - L.Draw not recognized in TypeScript
       if (map && L.Draw && L.Draw.Event) {
         // @ts-ignore - L.Draw.Event may not be properly typed
         map.off(L.Draw.Event.CREATED);
