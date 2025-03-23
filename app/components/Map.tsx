@@ -127,55 +127,78 @@ export default function Map({
     
     // Add the editable layers to the map if in edit mode
     if (editMode) {
+      console.log("Edit mode is enabled, setting up drawing tools");
+      
+      // First make sure we're working with the L.Draw namespace
+      if (!L.Draw) {
+        console.error("Leaflet Draw plugin is not available!");
+        return;
+      }
+      
+      // Add the editable layers FeatureGroup to the map
+      editableLayers.current = new L.FeatureGroup();
       editableLayers.current.addTo(currentMap);
       
-      // Initialize draw controls
-      try {
-        // Create the draw control
-        const drawControlOptions = {
-          position: 'topright',
-          draw: {
-            polyline: false,
-            circle: false,
-            circlemarker: false,
-            rectangle: false,
-            marker: false,
-            polygon: {
-              allowIntersection: false,
-              drawError: {
-                color: '#e1e100',
-                message: 'Polygons cannot intersect!'
-              },
-              shapeOptions: {
-                color: '#3388ff',
-                weight: 2
-              }
-            }
+      // Create draw options with specific settings for polygon
+      const drawOptions = {
+        polyline: false as const,
+        circle: false as const,
+        circlemarker: false as const,
+        rectangle: false as const,
+        marker: false as const,
+        polygon: {
+          allowIntersection: false,
+          drawError: {
+            color: '#e1e100',
+            message: 'Polygons cannot intersect!'
           },
-          edit: {
-            featureGroup: editableLayers.current,
-            remove: true
+          shapeOptions: {
+            color: '#3388ff',
+            weight: 2
           }
-        };
+        }
+      };
+      
+      // Create edit options
+      const editOptions = {
+        featureGroup: editableLayers.current,
+        remove: true
+      };
+      
+      try {
+        // Create the draw control with proper options
+        const control = new L.Control.Draw({
+          position: 'topright',
+          draw: drawOptions,
+          edit: editOptions
+        });
         
-        // @ts-ignore - add the draw control
-        const control = new L.Control.Draw(drawControlOptions);
+        // Add the control to the map
         currentMap.addControl(control);
+        console.log("Draw control successfully added to map", control);
+        
+        // Debug: Check if the control has been added to the DOM
+        setTimeout(() => {
+          const drawControls = document.querySelectorAll('.leaflet-draw');
+          console.log("Draw controls in DOM:", drawControls.length, drawControls);
+          
+          const polygonButton = document.querySelector('.leaflet-draw-draw-polygon');
+          console.log("Polygon button found:", polygonButton);
+        }, 500);
+        
         setDrawControl(control);
         
-        console.log("Draw control added to map");
+        // Set up event handlers for drawing actions
+        currentMap.on(L.Draw.Event.CREATED, handlePolygonCreated);
+        currentMap.on(L.Draw.Event.EDITED, handlePolygonEdited);
+        currentMap.on(L.Draw.Event.DELETED, handlePolygonDeleted);
         
-        // Setup event handlers for draw/edit events
-        currentMap.on(L.Draw.Event.CREATED, event => handlePolygonCreated(event));
-        currentMap.on(L.Draw.Event.EDITED, event => handlePolygonEdited(event));
-        currentMap.on(L.Draw.Event.DELETED, event => handlePolygonDeleted(event));
-        
-        // Clean up function to remove event listeners when component unmounts
+        // Clean up on unmount
         return () => {
           currentMap.off(L.Draw.Event.CREATED, handlePolygonCreated);
           currentMap.off(L.Draw.Event.EDITED, handlePolygonEdited);
           currentMap.off(L.Draw.Event.DELETED, handlePolygonDeleted);
-          if (control && currentMap) {
+          if (control) {
             currentMap.removeControl(control);
           }
         };
@@ -183,7 +206,7 @@ export default function Map({
         console.error("Error setting up draw controls:", error);
       }
     }
-  }, [editMode]); // Don't include mapRef.current in the dependency array
+  }, [editMode]);
   
   // Handle different radar types
   useEffect(() => {

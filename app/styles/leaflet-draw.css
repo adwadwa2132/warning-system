@@ -1,8 +1,60 @@
 /* Leaflet Draw styles */
+.leaflet-draw {
+  display: block !important;
+  visibility: visible !important;
+}
+
+.leaflet-draw-toolbar {
+  margin-top: 3px;
+}
+
+.leaflet-draw-toolbar a {
+  background-image: url('/leaflet-draw-images/spritesheet.svg') !important;
+  background-repeat: no-repeat !important;
+  display: block !important;
+  width: 30px !important;
+  height: 30px !important;
+  background-size: 270px 30px !important;
+}
+
 .leaflet-draw-toolbar .leaflet-draw-draw-polygon {
-  background-image: url('/leaflet-draw-images/spritesheet.svg');
-  background-repeat: no-repeat;
-  background-position: -31px -2px;
+  background-position: -31px -2px !important;
+}
+
+.leaflet-draw-draw-polyline {
+  background-position: -2px -2px !important;
+}
+
+.leaflet-draw-draw-rectangle {
+  background-position: -62px -2px !important;
+}
+
+.leaflet-draw-draw-circle {
+  background-position: -92px -2px !important;
+}
+
+.leaflet-draw-draw-marker {
+  background-position: -122px -2px !important;
+}
+
+.leaflet-draw-draw-circlemarker {
+  background-position: -152px -2px !important;
+}
+
+.leaflet-draw-edit-edit {
+  background-position: -182px -2px !important;
+}
+
+.leaflet-draw-edit-remove {
+  background-position: -212px -2px !important;
+}
+
+.leaflet-draw-edit-edit.leaflet-disabled {
+  background-position: -182px -32px !important;
+}
+
+.leaflet-draw-edit-remove.leaflet-disabled {
+  background-position: -212px -32px !important;
 }
 
 .leaflet-draw-actions {
@@ -47,64 +99,6 @@
 .leaflet-draw-actions-bottom a {
   height: 27px;
   line-height: 27px;
-}
-
-.leaflet-draw-toolbar {
-  margin-top: 3px;
-}
-
-.leaflet-draw-toolbar a {
-  background-image: url('/leaflet-draw-images/spritesheet.svg');
-  background-repeat: no-repeat;
-  display: block;
-  width: 30px;
-  height: 30px;
-}
-
-.leaflet-draw-toolbar a {
-  background-image: url('/leaflet-draw-images/spritesheet.svg');
-  background-repeat: no-repeat;
-  background-size: 270px 30px;
-}
-
-.leaflet-draw-draw-polyline {
-  background-position: -2px -2px;
-}
-
-.leaflet-draw-draw-polygon {
-  background-position: -31px -2px;
-}
-
-.leaflet-draw-draw-rectangle {
-  background-position: -62px -2px;
-}
-
-.leaflet-draw-draw-circle {
-  background-position: -92px -2px;
-}
-
-.leaflet-draw-draw-marker {
-  background-position: -122px -2px;
-}
-
-.leaflet-draw-draw-circlemarker {
-  background-position: -152px -2px;
-}
-
-.leaflet-draw-edit-edit {
-  background-position: -182px -2px;
-}
-
-.leaflet-draw-edit-remove {
-  background-position: -212px -2px;
-}
-
-.leaflet-draw-edit-edit.leaflet-disabled {
-  background-position: -182px -32px;
-}
-
-.leaflet-draw-edit-remove.leaflet-disabled {
-  background-position: -212px -32px;
 }
 
 .leaflet-mouse-marker {
