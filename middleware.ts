@@ -60,11 +60,49 @@ export const config = {
 };
 */
 
-// No-op middleware to replace the commented out version
+// Middleware function to protect admin routes
 export function middleware(request: NextRequest) {
+  // Only run on admin routes
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    const username = process.env.ADMIN_USERNAME;
+    const password = process.env.ADMIN_PASSWORD;
+    
+    // If no credentials are set in environment, block access entirely
+    if (!username || !password) {
+      return new NextResponse('Authentication not configured', { status: 403 });
+    }
+    
+    // Check for auth header
+    const authHeader = request.headers.get('authorization');
+    
+    if (authHeader) {
+      // Verify credentials using Buffer.from instead of atob for better compatibility
+      const authValue = authHeader.split(' ')[1];
+      const decodedAuth = Buffer.from(authValue, 'base64').toString('utf-8');
+      const [authUser, authPass] = decodedAuth.split(':');
+      
+      if (authUser === username && authPass === password) {
+        // Authorized, continue to admin page
+        return NextResponse.next();
+      }
+    }
+    
+    // Not authorized, request authentication
+    const response = new NextResponse('Authentication required', {
+      status: 401,
+      headers: {
+        'WWW-Authenticate': 'Basic realm="Warning System Admin"',
+      },
+    });
+    
+    return response;
+  }
+  
+  // Not an admin route, proceed normally
   return NextResponse.next();
 }
 
+// Configure middleware to run only for admin routes
 export const config = {
-  matcher: [],
+  matcher: ['/admin', '/admin/:path*'],
 }; 
