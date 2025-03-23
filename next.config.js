@@ -20,9 +20,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-
-  // Ensure we can handle Tailwind CSS
-  postcss: true,
   
   // Configure webpack to handle SVG files and path aliases
   webpack: (config) => {
@@ -83,6 +80,8 @@ const nextConfig = {
       '@': path.resolve(__dirname),
       'leaflet': require.resolve('leaflet'),
       'leaflet-draw': require.resolve('leaflet-draw'),
+      // Add alias for ajv to ensure it's found
+      'ajv/dist/compile/codegen': path.resolve(__dirname, 'node_modules/ajv/dist/compile/codegen'),
     };
 
     // Explicitly transpile packages
@@ -113,7 +112,7 @@ const nextConfig = {
   },
   
   // External modules that should be transpiled
-  transpilePackages: ['react-leaflet', '@react-leaflet', 'leaflet', 'leaflet-draw', 'react-datepicker'],
+  transpilePackages: ['react-leaflet', '@react-leaflet', 'leaflet', 'leaflet-draw', 'react-datepicker', 'ajv', 'ajv-keywords'],
   
   // Add middleware configuration to ensure it only applies to admin routes
   experimental: {},
