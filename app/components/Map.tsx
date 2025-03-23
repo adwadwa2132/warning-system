@@ -1,9 +1,9 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Polygon, useMap, LayersControl, ZoomControl, Popup } from 'react-leaflet';
-import React from 'react';
 
 // Remove direct CSS imports since they're causing build issues
 // import 'leaflet/dist/leaflet.css';
