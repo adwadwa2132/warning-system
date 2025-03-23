@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import Head from 'next/head';
 
 // We need to dynamically import the Map component because Leaflet 
 // requires window to be defined (which doesn't exist during SSR)
@@ -11,6 +12,32 @@ const Map = dynamic(() => import('../components/Map'), {
   loading: () => <p>Loading Map...</p>,
   ssr: false,
 });
+
+// Explicitly load Leaflet Draw for admin page
+function LeafletDrawLoader() {
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      // Dynamically load Leaflet Draw CSS
+      const linkElement = document.createElement('link');
+      linkElement.rel = 'stylesheet';
+      linkElement.href = 'https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css';
+      document.head.appendChild(linkElement);
+      
+      // Dynamically load Leaflet Draw JS if not already loaded
+      if (!(window as any).L?.Draw) {
+        const scriptElement = document.createElement('script');
+        scriptElement.src = 'https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js';
+        scriptElement.onload = () => {
+          console.log('Leaflet Draw script loaded directly in admin page');
+        };
+        document.body.appendChild(scriptElement);
+      }
+    }
+  }, []);
+  
+  return null;
+}
 
 export default function AdminPage() {
   const [title, setTitle] = useState('');
@@ -159,6 +186,10 @@ export default function AdminPage() {
 
   return (
     <div className="container mx-auto p-2 sm:p-4">
+      <Head>
+        <title>Warning System - Admin Panel</title>
+      </Head>
+      <LeafletDrawLoader />
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Warning System - Admin Panel</h1>
       
       <div className="mb-4 flex justify-end">
@@ -200,7 +231,6 @@ export default function AdminPage() {
           </p>
           <div className="h-[400px] sm:h-[600px] w-full">
             <Map 
-              editable={true} 
               editMode={true}
               onPolygonCreated={handlePolygonCreated} 
               onPolygonEdited={(editedPolygon) => {
@@ -212,6 +242,8 @@ export default function AdminPage() {
               zoom={8}
               showRadar={showRadar}
               radarType="mrms"
+              onWarningClick={() => {}}
+              selectedWarningId={null}
               setRadarControls={(controls) => {
                 console.log("Radar controls set:", controls);
                 // You can use the controls here if needed
