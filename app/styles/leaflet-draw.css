@@ -1,8 +1,8 @@
 /* Leaflet Draw styles */
 .leaflet-draw-toolbar .leaflet-draw-draw-polygon {
-  background-image: url('https://unpkg.com/leaflet-draw@1.0.4/dist/images/spritesheet.png');
+  background-image: url('/leaflet-draw-images/spritesheet.svg');
   background-repeat: no-repeat;
-  background-position: -2px -2px;
+  background-position: -31px -2px;
 }
 
 .leaflet-draw-actions {
@@ -54,12 +54,15 @@
 }
 
 .leaflet-draw-toolbar a {
-  background-image: url('https://unpkg.com/leaflet-draw@1.0.4/dist/images/spritesheet.png');
+  background-image: url('/leaflet-draw-images/spritesheet.svg');
   background-repeat: no-repeat;
+  display: block;
+  width: 30px;
+  height: 30px;
 }
 
 .leaflet-draw-toolbar a {
-  background-image: url('https://unpkg.com/leaflet-draw@1.0.4/dist/images/spritesheet.png');
+  background-image: url('/leaflet-draw-images/spritesheet.svg');
   background-repeat: no-repeat;
   background-size: 270px 30px;
 }

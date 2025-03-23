@@ -119,61 +119,71 @@ export default function Map({
   
   // Initialize map when it's ready
   useEffect(() => {
-    if (mapRef.current) {
-      const mapInstance = mapRef.current;
-      console.log("Map instance created", mapInstance);
-      setMap(mapInstance);
+    const currentMap = mapRef.current;
+    if (!currentMap) return;
+    
+    console.log("Map instance created", currentMap);
+    setMap(currentMap);
+    
+    // Add the editable layers to the map if in edit mode
+    if (editMode) {
+      editableLayers.current.addTo(currentMap);
       
-      // Add the editable layers to the map if in edit mode
-      if (editMode) {
-        editableLayers.current.addTo(mapInstance);
-        
-        // Initialize draw controls
-        try {
-          // Create the draw control
-          const drawControlOptions = {
-            position: 'topright',
-            draw: {
-              polyline: false,
-              circle: false,
-              circlemarker: false,
-              rectangle: false,
-              marker: false,
-              polygon: {
-                allowIntersection: false,
-                drawError: {
-                  color: '#e1e100',
-                  message: 'Polygons cannot intersect!'
-                },
-                shapeOptions: {
-                  color: '#3388ff',
-                  weight: 2
-                }
+      // Initialize draw controls
+      try {
+        // Create the draw control
+        const drawControlOptions = {
+          position: 'topright',
+          draw: {
+            polyline: false,
+            circle: false,
+            circlemarker: false,
+            rectangle: false,
+            marker: false,
+            polygon: {
+              allowIntersection: false,
+              drawError: {
+                color: '#e1e100',
+                message: 'Polygons cannot intersect!'
+              },
+              shapeOptions: {
+                color: '#3388ff',
+                weight: 2
               }
-            },
-            edit: {
-              featureGroup: editableLayers.current,
-              remove: true
             }
-          };
-          
-          // @ts-ignore
-          const control = new L.Control.Draw(drawControlOptions);
-          mapInstance.addControl(control);
-          setDrawControl(control);
-          
-          console.log("Draw control added to map directly");
-          
-          // Setup event handlers for draw/edit events
-          mapInstance.on(L.Draw.Event.CREATED, event => handlePolygonCreated(event));
-          mapInstance.on(L.Draw.Event.EDITED, event => handlePolygonEdited(event));
-          mapInstance.on(L.Draw.Event.DELETED, event => handlePolygonDeleted(event));
-        } catch (error) {
-          console.error("Error setting up draw controls during map creation:", error);
-        }
+          },
+          edit: {
+            featureGroup: editableLayers.current,
+            remove: true
+          }
+        };
+        
+        // @ts-ignore - add the draw control
+        const control = new L.Control.Draw(drawControlOptions);
+        currentMap.addControl(control);
+        setDrawControl(control);
+        
+        console.log("Draw control added to map");
+        
+        // Setup event handlers for draw/edit events
+        currentMap.on(L.Draw.Event.CREATED, event => handlePolygonCreated(event));
+        currentMap.on(L.Draw.Event.EDITED, event => handlePolygonEdited(event));
+        currentMap.on(L.Draw.Event.DELETED, event => handlePolygonDeleted(event));
+        
+        // Clean up function to remove event listeners when component unmounts
+        return () => {
+          currentMap.off(L.Draw.Event.CREATED, handlePolygonCreated);
+          currentMap.off(L.Draw.Event.EDITED, handlePolygonEdited);
+          currentMap.off(L.Draw.Event.DELETED, handlePolygonDeleted);
+          if (control && currentMap) {
+            currentMap.removeControl(control);
+          }
+        };
+      } catch (error) {
+        console.error("Error setting up draw controls:", error);
       }
     }
-  }, [mapRef.current, editMode]);
+  }, [editMode]); // Don't include mapRef.current in the dependency array
   
   // Handle different radar types
   useEffect(() => {
