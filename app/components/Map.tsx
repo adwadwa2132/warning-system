@@ -5,11 +5,9 @@ import L from 'leaflet';
 import { MapContainer, TileLayer, Polygon, useMap, LayersControl, ZoomControl, Popup } from 'react-leaflet';
 import React from 'react';
 
-// Import Leaflet styles directly - these are processed by webpack
-import 'leaflet/dist/leaflet.css';
-// Don't import leaflet-draw CSS directly since it has SVG references
-// that cause build problems. We'll use our custom CSS instead
-import '../../styles/LeafletDrawStyles.css';
+// Remove direct CSS imports since they're causing build issues
+// import 'leaflet/dist/leaflet.css';
+// import '../../styles/LeafletDrawStyles.css';
 
 // We need to manually ensure leaflet-draw is loaded
 // This ensures the L.Draw namespace is available
