@@ -42,9 +42,6 @@ const nextConfig = {
   
   // External modules that should be transpiled
   transpilePackages: ['react-leaflet', 'leaflet', 'leaflet-draw'],
-  
-  // Disable CSS modules since we're loading CSS from CDN
-  cssModules: false,
 };
 
 module.exports = nextConfig;
