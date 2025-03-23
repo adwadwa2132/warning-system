@@ -33,19 +33,18 @@ const nextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname),
+      'leaflet': path.resolve(__dirname, 'node_modules/leaflet'),
+      'leaflet-draw': path.resolve(__dirname, 'node_modules/leaflet-draw'),
     };
-    
-    // Handle CSS externally - don't bundle CSS
-    config.module.rules.push({
-      test: /\.(css)$/,
-      use: ['ignore-loader'],
-    });
     
     return config;
   },
   
-  // Enable transpile modules for leaflet packages
+  // External modules that should be transpiled
   transpilePackages: ['react-leaflet', 'leaflet', 'leaflet-draw'],
+  
+  // Disable CSS modules since we're loading CSS from CDN
+  cssModules: false,
 };
 
 module.exports = nextConfig;

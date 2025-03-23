@@ -1,12 +1,23 @@
 [build]
-  command = "npm install && CI=false npm run build"
+  command = "npm install --save-dev ignore-loader && npm install && CI=false npm run build"
   publish = ".next"
 
 [build.environment]
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
-  NODE_VERSION = "20.10.0"
+  NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
+  NEXT_USE_NETLIFY_EDGE = "true"
   NODE_ENV = "production"
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; script-src 'self' 'unsafe-eval' 'unsafe-inline'; img-src 'self' data: https://*.openweathermap.org https://unpkg.com blob:; connect-src 'self' https://*.openweathermap.org https://api.rainviewer.com; frame-src 'self'; font-src 'self';"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs" 
