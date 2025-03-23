@@ -87,20 +87,33 @@ export default function AdminPage() {
   const [showRadar, setShowRadar] = useState(true);
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   
-  // Add script tag for draw controls
+  // Add script tag for direct draw controls
   useEffect(() => {
+    // Remove old script if exists
+    const oldScript = document.getElementById('draw-control-script');
+    if (oldScript) {
+      oldScript.remove();
+    }
+    
+    // Load our new direct approach script
     const script = document.createElement('script');
-    script.src = '/inject-draw.js';
+    script.id = 'draw-control-script';
+    script.src = '/direct-draw.js';
     script.async = true;
-    script.defer = true;
     document.body.appendChild(script);
     
-    console.log("Injected drawing controls script");
+    console.log("Loaded new direct drawing script");
     
     return () => {
-      // Clean up the script when component unmounts
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
+      // Clean up script on unmount
+      const script = document.getElementById('draw-control-script');
+      if (script) {
+        script.remove();
+      }
+      // Remove any buttons added by the script
+      const button = document.getElementById('direct-draw-button');
+      if (button) {
+        button.remove();
       }
     };
   }, []);
