@@ -42,6 +42,15 @@ const nextConfig = {
   
   // External modules that should be transpiled
   transpilePackages: ['react-leaflet', 'leaflet', 'leaflet-draw'],
+  
+  // Add middleware configuration to ensure it only applies to admin routes
+  experimental: {
+    middleware: {
+      // Only apply middleware to admin paths
+      skipMiddlewareUrlNormalize: true,
+      skipTrailingSlashRedirect: true,
+    },
+  },
 };
 
 module.exports = nextConfig;

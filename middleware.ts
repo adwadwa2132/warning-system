@@ -62,12 +62,15 @@ export const config = {
 
 // Middleware function to protect admin routes
 export function middleware(request: NextRequest) {
-  // Get the pathname from the URL
-  const pathname = request.nextUrl.pathname;
+  // Get the full URL to examine
+  const url = request.nextUrl.clone();
+  const pathname = url.pathname;
   
-  // Very explicit check to ensure we're ONLY matching /admin paths
-  // This will NOT match other paths
+  // ONLY proceed with auth if the path is exactly /admin or starts with /admin/
+  // This is a very strict check to ensure we don't affect other routes
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    console.log("Admin route detected, applying authentication:", pathname);
+    
     const username = process.env.ADMIN_USERNAME;
     const password = process.env.ADMIN_PASSWORD;
     
@@ -92,26 +95,24 @@ export function middleware(request: NextRequest) {
     }
     
     // Not authorized, request authentication
-    const response = new NextResponse('Authentication required', {
+    return new NextResponse('Authentication required', {
       status: 401,
       headers: {
         'WWW-Authenticate': 'Basic realm="Warning System Admin"',
       },
     });
-    
-    return response;
   }
   
-  // Not an admin route, proceed normally without authentication
+  // For any other route, immediately pass through without auth
+  console.log("Non-admin route, skipping authentication:", pathname);
   return NextResponse.next();
 }
 
-// Configure middleware to run ONLY on admin routes
-// This limits when the middleware function is called
+// CRITICAL: Configure middleware to ONLY run on these exact paths
 export const config = {
   matcher: [
-    // Match only /admin and /admin/... paths
+    // Match ONLY these specific admin paths and nothing else
     '/admin',
-    '/admin/:path*'
+    '/admin/:path*',
   ],
 }; 
