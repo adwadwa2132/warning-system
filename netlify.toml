@@ -1,13 +1,14 @@
 [build]
-  command = "npm install && CI=false NEXT_PUBLIC_SKIP_TYPE_CHECK=true npm run build"
+  command = "npm install --legacy-peer-deps && CI=false NEXT_PUBLIC_SKIP_TYPE_CHECK=true npm run build"
   publish = ".next"
 
 [build.environment]
-  NETLIFY_NEXT_PLUGIN_SKIP = "true"
-  NODE_VERSION = "18"
-  NEXT_TELEMETRY_DISABLED = "1"
-  NEXT_USE_NETLIFY_EDGE = "true"
+  MONGODB_URI = ""
+  ADMIN_USERNAME = ""
+  ADMIN_PASSWORD = ""
   NODE_ENV = "production"
+  # Skip Netlify Next.js plugin
+  NETLIFY_NEXT_PLUGIN_SKIP = "true"
 
 [[headers]]
   for = "/_next/static/*"
