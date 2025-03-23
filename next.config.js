@@ -7,9 +7,13 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   
+  // Enable static exports 
+  output: 'standalone',
+  
   // Allow images from external domains
   images: {
     domains: ['openweathermap.org'],
+    unoptimized: true,
   },
   
   // Disable ESLint
@@ -29,7 +33,8 @@ const nextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname),
-      'leaflet-draw': require.resolve('leaflet-draw')
+      'leaflet-draw': require.resolve('leaflet-draw'),
+      'leaflet': require.resolve('leaflet'),
     };
     
     return config;

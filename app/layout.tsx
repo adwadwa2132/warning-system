@@ -1,26 +1,28 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import "./styles/leaflet-draw.css";
+import './globals.css';
+import LeafletDrawStyles from './components/LeafletDrawStyles';
 
-const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "Weather Warning System",
-  description: "A real-time warning system for severe weather events",
+export const metadata = {
+  title: 'Warning System',
+  description: 'A system for managing and displaying weather warnings',
 };
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet" />
+        <link href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" rel="stylesheet" />
       </head>
-      <body className={`${inter.className} bg-gray-100`}>{children}</body>
+      <body className="bg-gray-100">
+        <LeafletDrawStyles />
+        {children}
+      </body>
     </html>
   );
 }
