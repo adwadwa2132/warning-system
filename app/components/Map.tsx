@@ -119,6 +119,43 @@ export default function Map({
   const editableLayers = useRef(new L.FeatureGroup());
   const mapRef = useRef(null);
   
+  // Expose map instance globally to help custom scripts find it
+  useEffect(() => {
+    if (mapRef.current) {
+      console.log("Exposing map instance globally");
+      
+      // Use type assertion to add properties to window
+      (window as any)._leafletMap = mapRef.current;
+      
+      // Expose helper for external scripts to force draw mode
+      (window as any)._startDrawingPolygon = () => {
+        try {
+          if (!mapRef.current) return false;
+          
+          console.log("External drawing request received");
+          if ((L as any).Draw && (L as any).Draw.Polygon) {
+            const handler = new ((L as any).Draw.Polygon)(mapRef.current, {
+              shapeOptions: { color: '#f00' }
+            });
+            handler.enable();
+            console.log("Drawing polygon through exposed helper");
+            return true;
+          }
+          return false;
+        } catch (err) {
+          console.error("Error in global drawing helper:", err);
+          return false;
+        }
+      };
+    }
+    
+    return () => {
+      // Clean up global references when component unmounts
+      delete (window as any)._leafletMap;
+      delete (window as any)._startDrawingPolygon;
+    };
+  }, [mapRef.current]);
+  
   // Debug warnings data
   useEffect(() => {
     console.log("Warnings received in Map component:", warnings);

@@ -17,96 +17,253 @@
   function injectDrawControls() {
     console.log("Attempting to inject draw controls");
     
-    // Check if we need to add the script
-    if (!window.L || !window.L.Draw) {
-      console.log("Leaflet Draw not found, loading script...");
-      loadLeafletDraw();
-      return;
-    }
+    // Always load Leaflet Draw to ensure it's available
+    loadLeafletDraw();
     
+    // Wait for Leaflet Draw to be loaded
+    const checkAndCreateControls = () => {
+      if (window.L && window.L.Draw) {
+        createDrawControls();
+      } else {
+        console.log("Waiting for Leaflet Draw to load...");
+        setTimeout(checkAndCreateControls, 500);
+      }
+    };
+    
+    setTimeout(checkAndCreateControls, 1000);
+  }
+  
+  // Create the actual draw controls
+  function createDrawControls() {
     // Check if controls already exist
     if (document.querySelector('.leaflet-draw')) {
       console.log("Draw controls already exist, no need to inject");
       return;
     }
     
-    // Find or create container for controls
-    const container = document.querySelector('.leaflet-top.leaflet-right') || 
-                      createControlContainer();
+    console.log("Creating draw controls");
     
-    // Create draw control
-    const drawControl = document.createElement('div');
-    drawControl.className = 'leaflet-control-draw leaflet-bar leaflet-control';
-    drawControl.style.cssText = 'display: block !important; visibility: visible !important; z-index: 1000 !important; background: white; border: 2px solid rgba(0,0,0,0.2); border-radius: 4px;';
+    // Find map instance directly from the React component
+    let mapInstance = null;
     
-    // Create polygon button
-    const polygonBtn = document.createElement('a');
-    polygonBtn.href = '#';
-    polygonBtn.className = 'leaflet-draw-draw-polygon';
-    polygonBtn.title = 'Draw a polygon';
-    polygonBtn.innerHTML = '<span>▢</span>'; // Basic polygon shape
-    polygonBtn.style.cssText = `
-      display: block !important;
-      width: 30px !important;
-      height: 30px !important;
-      line-height: 30px !important;
-      text-align: center !important;
-      text-decoration: none !important;
-      color: black !important;
-      background: white !important;
-      font-weight: bold !important;
-      font-size: 18px !important;
-    `;
-    
-    // Add click handler
-    polygonBtn.onclick = function(e) {
-      e.preventDefault();
-      console.log("Custom polygon button clicked");
-      
-      try {
-        const map = findMap();
-        if (!map) {
-          console.error("Could not find map instance");
-          return;
-        }
-        
-        if (window.L && window.L.Draw && window.L.Draw.Polygon) {
-          const handler = new window.L.Draw.Polygon(map, {
-            shapeOptions: { color: '#f00' }
-          });
-          handler.enable();
-          console.log("Polygon drawing enabled");
-        } else {
-          console.error("Leaflet Draw not available");
-          alert("Drawing tools not loaded properly. Please refresh the page.");
-        }
-      } catch (err) {
-        console.error("Error enabling drawing:", err);
-      }
-    };
-    
-    // Add to DOM
-    drawControl.appendChild(polygonBtn);
-    container.appendChild(drawControl);
-    console.log("Custom draw controls added:", drawControl);
-  }
-  
-  // Helper to find the map instance
-  function findMap() {
-    // Try to get the map from Leaflet's internal _leaflet_id mapping
-    const container = document.querySelector('.leaflet-container');
-    if (!container) return null;
-    
-    const id = container._leaflet_id;
-    if (id && window.L && window.L.map && window.L.map._instances) {
-      return window.L.map._instances[id];
+    // Try to find the map instance in ReactDOM
+    const reactInstances = findReactInstance();
+    if (reactInstances && reactInstances.length > 0) {
+      console.log("Found React instances:", reactInstances.length);
     }
     
-    // Fallback - create a "fake" map object that just wraps the container
-    return {
-      _container: container,
-      getContainer: function() { return container; }
-    };
+    // Create direct DOM controls
+    createDirectDrawControls();
+  }
+  
+  // Find React instances (may help debug)
+  function findReactInstance() {
+    const instances = [];
+    try {
+      const containerElements = document.querySelectorAll('[data-reactroot], [data-reactid]');
+      console.log("Found React roots:", containerElements.length);
+      return Array.from(containerElements);
+    } catch (err) {
+      console.error("Error finding React instances:", err);
+      return instances;
+    }
+  }
+  
+  // Create direct DOM controls with hardcoded polygon drawing
+  function createDirectDrawControls() {
+    try {
+      // Find or create container for controls
+      const container = document.querySelector('.leaflet-top.leaflet-right') || 
+                        createControlContainer();
+      
+      // Create button with very visible styling
+      const btn = document.createElement('div');
+      btn.className = 'custom-draw-control';
+      btn.style.cssText = `
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: white;
+        border: 2px solid rgba(0,0,0,0.2);
+        border-radius: 4px;
+        z-index: 1000;
+        padding: 5px;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+      `;
+      
+      // Create polygon button
+      const polygonBtn = document.createElement('button');
+      polygonBtn.textContent = "🔺 Draw Polygon";
+      polygonBtn.style.cssText = `
+        display: block;
+        width: 120px;
+        padding: 8px;
+        margin: 2px;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        text-align: center;
+        color: #333;
+      `;
+      
+      // Add hover effect
+      polygonBtn.onmouseover = () => {
+        polygonBtn.style.backgroundColor = '#f0f0f0';
+      };
+      polygonBtn.onmouseout = () => {
+        polygonBtn.style.backgroundColor = '#fff';
+      };
+      
+      // Add click handler
+      polygonBtn.onclick = function(e) {
+        e.preventDefault();
+        console.log("Draw polygon button clicked");
+        
+        // Try using the exposed helper first
+        if (window._startDrawingPolygon && typeof window._startDrawingPolygon === 'function') {
+          console.log("Using exposed drawing helper from Map component");
+          const success = window._startDrawingPolygon();
+          if (success) {
+            console.log("Successfully started drawing mode via helper");
+            return;
+          }
+        }
+        
+        // Fallback to direct drawing mode initialization
+        initDrawingMode();
+      };
+      
+      // Add to DOM
+      btn.appendChild(polygonBtn);
+      
+      // Add to the map container directly
+      const mapContainer = document.querySelector('.leaflet-container');
+      if (mapContainer) {
+        mapContainer.appendChild(btn);
+        console.log("Added custom draw button directly to map container");
+      } else {
+        document.body.appendChild(btn);
+        console.log("Added custom draw button to body");
+      }
+      
+      console.log("Custom draw control created");
+    } catch (err) {
+      console.error("Error creating direct control:", err);
+    }
+  }
+  
+  // Initialize drawing mode by finding Leaflet map instance
+  function initDrawingMode() {
+    try {
+      // Look for map in various places
+      const mapContainer = document.querySelector('.leaflet-container');
+      if (!mapContainer) {
+        console.error("No map container found");
+        return;
+      }
+      
+      // Ensure Leaflet and Draw exist
+      if (!window.L || !window.L.Draw) {
+        console.error("Leaflet Draw not available");
+        loadLeafletDraw();
+        alert("Drawing tools not ready. Please try again in a few seconds.");
+        return;
+      }
+      
+      // Try to get the map using internal Leaflet methods
+      const maps = findAllMaps();
+      if (maps.length === 0) {
+        console.error("No map instances found");
+        useBackupDrawingMethod(mapContainer);
+        return;
+      }
+      
+      // Use the first map instance
+      const map = maps[0];
+      console.log("Found map instance:", map);
+      
+      // Create a new drawing handler
+      const handler = new window.L.Draw.Polygon(map, {
+        shapeOptions: { color: '#f00' }
+      });
+      
+      // Enable drawing
+      handler.enable();
+      console.log("Drawing mode enabled");
+      
+    } catch (err) {
+      console.error("Error initializing drawing mode:", err);
+    }
+  }
+  
+  // Find all map instances using various methods
+  function findAllMaps() {
+    const maps = [];
+    
+    try {
+      // Method 1: Use Leaflet's internal container ID mapping
+      if (window.L && window.L.Map && window.L.Map._instances) {
+        for (let id in window.L.Map._instances) {
+          maps.push(window.L.Map._instances[id]);
+        }
+      }
+      
+      // Method 2: Access through map container's internal properties
+      document.querySelectorAll('.leaflet-container').forEach(container => {
+        if (container._leaflet_id && window.L.Map._instances) {
+          const mapInstance = window.L.Map._instances[container._leaflet_id];
+          if (mapInstance && !maps.includes(mapInstance)) {
+            maps.push(mapInstance);
+          }
+        }
+      });
+      
+      // Method 3: Look for map instance in global scope (sometimes exposed by React)
+      if (window._leafletMap) {
+        maps.push(window._leafletMap);
+      }
+      
+      console.log(`Found ${maps.length} map instances`);
+      return maps;
+      
+    } catch (err) {
+      console.error("Error finding map instances:", err);
+      return [];
+    }
+  }
+  
+  // Backup method if we can't find the map instance
+  function useBackupDrawingMethod(mapContainer) {
+    try {
+      console.log("Trying backup drawing method");
+      
+      // Create fake map reference
+      const fakeMap = {
+        _container: mapContainer,
+        getContainer: function() { return mapContainer; },
+        fire: function(eventName, data) {
+          console.log("Map event fired:", eventName, data);
+          
+          // Dispatch custom event for React to pick up
+          const customEvent = new CustomEvent('leaflet-draw-' + eventName, { 
+            detail: data,
+            bubbles: true 
+          });
+          mapContainer.dispatchEvent(customEvent);
+        }
+      };
+      
+      // Try to enable drawing
+      if (window.L && window.L.Draw && window.L.Draw.Polygon) {
+        const handler = new window.L.Draw.Polygon(fakeMap);
+        handler.enable();
+        console.log("Enabled drawing with fake map");
+      }
+    } catch (err) {
+      console.error("Backup drawing method failed:", err);
+    }
   }
   
   // Create control container if missing
@@ -129,20 +286,28 @@
     return topRight;
   }
   
-  // Load Leaflet Draw script
+  // Load Leaflet Draw script and CSS
   function loadLeafletDraw() {
+    // Check if already loaded
+    if (document.querySelector('script[src*="leaflet.draw.js"]')) {
+      console.log("Leaflet Draw script already loading");
+      return;
+    }
+    
+    console.log("Loading Leaflet Draw script and CSS");
+    
+    // Load script
     const script = document.createElement('script');
     script.src = 'https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js';
     script.onload = function() {
-      console.log("Leaflet Draw loaded, now injecting controls");
-      setTimeout(injectDrawControls, 500);
+      console.log("✅ Leaflet Draw script loaded successfully");
     };
     script.onerror = function() {
-      console.error("Failed to load Leaflet Draw");
+      console.error("❌ Failed to load Leaflet Draw script");
     };
     document.body.appendChild(script);
     
-    // Also add CSS
+    // Load CSS
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css';
@@ -152,6 +317,7 @@
   // Start the process
   waitForMap();
   
-  // Also try again after a delay (in case the map loads after this script)
-  setTimeout(waitForMap, 3000);
+  // Try again after delays in case the map loads later
+  setTimeout(waitForMap, 2000);
+  setTimeout(waitForMap, 5000);
 })(); 
