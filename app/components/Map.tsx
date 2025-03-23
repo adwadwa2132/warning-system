@@ -32,6 +32,55 @@ function MapDebugger() {
   return null;
 }
 
+// Add radar product selection UI component
+function RadarControls({ radarData, currentTimestamp, refreshRadar, currentProduct, setProduct }) {
+  const productOptions = [
+    { value: 'reflectivity', label: 'Reflectivity' },
+    { value: 'precipitation', label: 'Precipitation Rate' },
+    { value: 'composite', label: 'Composite Reflectivity' },
+    { value: 'velocity', label: 'Base Velocity' },
+    { value: 'rotation', label: 'Rotation (Tornado Detection)' },
+    { value: 'hail', label: 'Hail Detection' }
+  ];
+
+  return (
+    <div className="bg-white p-3 mt-3 rounded-md shadow-md border border-gray-200">
+      <div className="flex flex-col sm:flex-row justify-between gap-3">
+        <div className="text-sm font-semibold">
+          MRMS Radar Data
+        </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          {currentProduct && setProduct && (
+            <select
+              value={currentProduct}
+              onChange={(e) => setProduct(e.target.value)}
+              className="text-sm border border-gray-300 rounded px-2 py-1"
+            >
+              {productOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          )}
+          
+          <div className="flex items-center gap-3">
+            <span className="text-xs sm:text-sm">
+              {currentTimestamp ? new Date(currentTimestamp * 1000).toLocaleString() : 'Loading...'}
+            </span>
+            <button
+              onClick={refreshRadar}
+              className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300"
+            >
+              Refresh Radar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Main Map Component
 export default function Map({ 
   warnings = [], 
@@ -46,6 +95,18 @@ export default function Map({
   selectedWarningId,
   radarType = "rainviewer"
 }) {
+  // State variables
+  const [map, setMap] = useState(null);
+  const [selectedWarning, setSelectedWarning] = useState(null);
+  const [radarData, setRadarData] = useState(null);
+  const [currentTimestamp, setCurrentTimestamp] = useState(0);
+  const [radarLayer, setRadarLayer] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState('reflectivity');
+  const drawControlRef = useRef(null);
+  const [drawControl, setDrawControl] = useState(null);
+  const editableLayers = useRef(new L.FeatureGroup());
+  
   // Debug warnings data
   useEffect(() => {
     console.log("Warnings received in Map component:", warnings);
@@ -54,17 +115,6 @@ export default function Map({
       console.log("First warning polygon:", warnings[0].polygon);
     }
   }, [warnings]);
-  
-  // State variables
-  const [map, setMap] = useState(null);
-  const [selectedWarning, setSelectedWarning] = useState(null);
-  const [radarData, setRadarData] = useState(null);
-  const [currentTimestamp, setCurrentTimestamp] = useState(0);
-  const [radarLayer, setRadarLayer] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const drawControlRef = useRef(null);
-  const [drawControl, setDrawControl] = useState(null);
-  const editableLayers = useRef(new L.FeatureGroup());
   
   // Set up the map instance when component mounts
   const onMapCreated = useCallback((mapInstance) => {
@@ -122,10 +172,12 @@ export default function Map({
       // Setup event handlers for draw/edit events
       map.on(L.Draw.Event.CREATED, handlePolygonCreated);
       map.on(L.Draw.Event.EDITED, handlePolygonEdited);
+      map.on(L.Draw.Event.DELETED, handlePolygonDeleted);
       
       return () => {
         map.off(L.Draw.Event.CREATED, handlePolygonCreated);
         map.off(L.Draw.Event.EDITED, handlePolygonEdited);
+        map.off(L.Draw.Event.DELETED, handlePolygonDeleted);
         if (control) {
           map.removeControl(control);
         }
@@ -135,17 +187,20 @@ export default function Map({
     }
   }, [map, editMode, onPolygonCreated, onPolygonEdited]);
   
-  // Fetch the radar data from RainViewer API - only once initially with manual refresh
+  // Handle different radar types
   useEffect(() => {
-    // Avoid refetching if we already have data or are currently loading
-    if (radarData || isLoading) return;
+    if (!map || !showRadar) return;
     
-    fetchRadarData();
-  }, [radarData, isLoading]);
-
-  // Fetch radar data and display the latest frame
-  const fetchRadarData = async () => {
-    if (isLoading) return;
+    if (radarType === 'rainviewer') {
+      fetchRainviewerData();
+    } else if (radarType === 'mrms') {
+      fetchMrmsData();
+    }
+  }, [map, showRadar, radarType, currentProduct]);
+  
+  // Fetch RainViewer data
+  const fetchRainviewerData = async () => {
+    if (isLoading || !map) return;
     
     try {
       setIsLoading(true);
@@ -153,6 +208,29 @@ export default function Map({
       const data = await response.json();
       console.log("Radar data successfully fetched", data);
       setRadarData(data);
+      
+      // Display latest frame
+      if (data.radar && data.radar.past && data.radar.past.length > 0) {
+        const latestFrame = data.radar.past[data.radar.past.length - 1];
+        const tileUrl = latestFrame.path;
+        const timestamp = latestFrame.time;
+        setCurrentTimestamp(timestamp);
+        
+        // Remove existing layer
+        if (radarLayer) {
+          map.removeLayer(radarLayer);
+        }
+        
+        // Add new layer
+        const layer = L.tileLayer(`https://tilecache.rainviewer.com${tileUrl}/256/{z}/{x}/{y}/2/1_1.png`, {
+          opacity: 0.6,
+          zIndex: 100
+        });
+        
+        layer.addTo(map);
+        setRadarLayer(layer);
+      }
+      
       setIsLoading(false);
     } catch (error) {
       console.error("Failed to fetch radar data:", error);
@@ -160,58 +238,86 @@ export default function Map({
     }
   };
   
-  // Expose radar controls to parent components (simplified)
-  useEffect(() => {
-    if (radarData && setRadarControls) {
-      setRadarControls({
-        refreshRadar: fetchRadarData,
-        currentTimestamp
-      });
-    }
-  }, [setRadarControls, radarData, currentTimestamp]);
-  
-  // Show latest radar frame when data is loaded
-  useEffect(() => {
-    if (!radarData || !map) return;
+  // Fetch MRMS data (for admin page)
+  const fetchMrmsData = async () => {
+    if (isLoading || !map) return;
     
-    // Clear existing layer if any
-    if (radarLayer) {
-      map.removeLayer(radarLayer);
-    }
-    
-    // Add latest radar data
-    if (showRadar) {
-      try {
-        // Get the radar frames
-        const { radar } = radarData;
-        if (!radar || !radar.past || !radar.past.length) {
-          console.log("No radar data available");
-          return;
-        }
-        
-        // Use the most recent past frame
-        const latestFrame = radar.past[radar.past.length - 1];
-        const tileUrl = latestFrame.path;
-        const timestamp = latestFrame.time;
-        
-        // Set current timestamp
-        setCurrentTimestamp(timestamp);
-        
-        // Create the tile layer
-        const layer = L.tileLayer(`https://tilecache.rainviewer.com${tileUrl}/256/{z}/{x}/{y}/2/1_1.png`, {
-          opacity: 0.6,
-          zIndex: 100
-        });
-        
-        // Add the layer to the map
-        layer.addTo(map);
-        setRadarLayer(layer);
-        console.log("Radar layer added to map");
-      } catch (error) {
-        console.error("Error displaying radar data:", error);
+    try {
+      setIsLoading(true);
+      
+      // Remove existing layer
+      if (radarLayer) {
+        map.removeLayer(radarLayer);
       }
+      
+      // Product selection (URLs adjusted based on selected product)
+      const products = {
+        reflectivity: {
+          url: 'https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0r.cgi',
+          layers: 'nexrad-n0r'
+        },
+        precipitation: {
+          url: 'https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0q.cgi',
+          layers: 'nexrad-n0q-900913'
+        },
+        composite: {
+          url: 'https://opengeo.ncep.noaa.gov/geoserver/conus/conus_cref_qcd/ows',
+          layers: 'conus_cref_qcd'
+        },
+        velocity: {
+          url: 'https://opengeo.ncep.noaa.gov/geoserver/conus/conus_bv_qcd/ows',
+          layers: 'conus_bv_qcd'
+        },
+        rotation: {
+          url: 'https://opengeo.ncep.noaa.gov/geoserver/conus/conus_srvel_qcd/ows',
+          layers: 'conus_srvel_qcd'
+        },
+        hail: {
+          url: 'https://opengeo.ncep.noaa.gov/geoserver/conus/conus_mh_qcd/ows',
+          layers: 'conus_mh_qcd'
+        }
+      };
+      
+      const selectedProduct = products[currentProduct] || products.reflectivity;
+      
+      // Create WMS layer
+      const layer = L.tileLayer.wms(
+        selectedProduct.url,
+        {
+          layers: selectedProduct.layers,
+          format: 'image/png',
+          transparent: true,
+          attribution: 'NOAA/NWS MRMS',
+          opacity: 0.7,
+          zIndex: 100
+        }
+      );
+      
+      // Add to map
+      layer.addTo(map);
+      setRadarLayer(layer);
+      setCurrentTimestamp(Date.now() / 1000);
+      setIsLoading(false);
+      
+    } catch (error) {
+      console.error("Failed to fetch MRMS data:", error);
+      setIsLoading(false);
     }
-  }, [map, radarData, showRadar]);
+  };
+  
+  // Expose radar controls to parent components
+  useEffect(() => {
+    if (!setRadarControls) return;
+    
+    const controls = {
+      refreshRadar: radarType === 'rainviewer' ? fetchRainviewerData : fetchMrmsData,
+      currentTimestamp: currentTimestamp ? new Date(currentTimestamp * 1000).toLocaleString() : '',
+      setProduct: setCurrentProduct,
+      currentProduct
+    };
+    
+    setRadarControls(controls);
+  }, [setRadarControls, currentTimestamp, currentProduct, radarType]);
   
   // Handle polygon creation
   const handlePolygonCreated = (event) => {
@@ -221,11 +327,20 @@ export default function Map({
       
       // Extract polygon coordinates
       const polygon = layer.getLatLngs()[0];
-      const coordinates = polygon.map(point => [point.lat, point.lng]);
       
-      // Pass coordinates to the parent component
+      // Convert to [[lng, lat], [lng, lat], ...] format for GeoJSON
+      const coordinates = polygon.map(point => [point.lng, point.lat]);
+      
+      // Close the polygon by repeating the first point
+      if (coordinates.length > 0 && 
+          (coordinates[0][0] !== coordinates[coordinates.length - 1][0] || 
+           coordinates[0][1] !== coordinates[coordinates.length - 1][1])) {
+        coordinates.push([...coordinates[0]]);
+      }
+      
+      // Pass coordinates to the parent component in the format expected by MongoDB ([[[lng, lat], ...]])
       if (onPolygonCreated) {
-        onPolygonCreated(coordinates);
+        onPolygonCreated([[coordinates]]);
       }
       
       console.log("Polygon created:", coordinates);
@@ -240,17 +355,40 @@ export default function Map({
       const layers = event.layers;
       layers.eachLayer((layer) => {
         const polygon = layer.getLatLngs()[0];
-        const coordinates = polygon.map(point => [point.lat, point.lng]);
+        
+        // Convert to [[lng, lat], [lng, lat], ...] format for GeoJSON
+        const coordinates = polygon.map(point => [point.lng, point.lat]);
+        
+        // Close the polygon
+        if (coordinates.length > 0 &&
+            (coordinates[0][0] !== coordinates[coordinates.length - 1][0] ||
+             coordinates[0][1] !== coordinates[coordinates.length - 1][1])) {
+          coordinates.push([...coordinates[0]]);
+        }
         
         // Pass coordinates to the parent component
         if (onPolygonEdited) {
-          onPolygonEdited(coordinates);
+          onPolygonEdited([[coordinates]]);
         }
         
         console.log("Polygon edited:", coordinates);
       });
     } catch (error) {
       console.error("Error handling polygon edit:", error);
+    }
+  };
+  
+  // Handle polygon deletion
+  const handlePolygonDeleted = (event) => {
+    try {
+      console.log("Polygon deleted");
+      
+      // Clear the polygon data in the parent component
+      if (onPolygonEdited) {
+        onPolygonEdited([[]]);
+      }
+    } catch (error) {
+      console.error("Error handling polygon deletion:", error);
     }
   };
   
@@ -411,6 +549,17 @@ export default function Map({
           );
         })}
       </MapContainer>
+      
+      {/* Render radar controls below map if needed and in MRMS mode */}
+      {showRadar && radarType === 'mrms' && (
+        <RadarControls 
+          radarData={radarData} 
+          currentTimestamp={currentTimestamp} 
+          refreshRadar={fetchMrmsData}
+          currentProduct={currentProduct}
+          setProduct={setCurrentProduct}
+        />
+      )}
     </div>
   );
 } 

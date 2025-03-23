@@ -201,12 +201,21 @@ export default function AdminPage() {
           <div className="h-[400px] sm:h-[600px] w-full">
             <Map 
               editable={true} 
+              editMode={true}
               onPolygonCreated={handlePolygonCreated} 
+              onPolygonEdited={(editedPolygon) => {
+                setPolygon(editedPolygon);
+                setMessage({ text: 'Polygon updated', type: 'success' });
+              }}
               warnings={warnings} 
               center={[43.6532, -79.3832]} 
               zoom={8}
               showRadar={showRadar}
               radarType="mrms"
+              setRadarControls={(controls) => {
+                console.log("Radar controls set:", controls);
+                // You can use the controls here if needed
+              }}
             />
           </div>
         </div>
