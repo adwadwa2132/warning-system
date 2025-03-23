@@ -13,67 +13,6 @@ const Map = dynamic(() => import('../components/Map'), {
   ssr: false,
 });
 
-// Explicitly load Leaflet Draw for admin page
-function LeafletDrawLoader() {
-  useEffect(() => {
-    // Only run on client side
-    if (typeof window !== 'undefined') {
-      console.log("LeafletDrawLoader executing - attempting to load resources");
-      
-      // Force Leaflet Draw CSS with !important rules
-      const inlineStyles = document.createElement('style');
-      inlineStyles.textContent = `
-        .leaflet-draw-section {
-          position: relative !important;
-          display: block !important;
-          visibility: visible !important;
-        }
-        .leaflet-draw-toolbar {
-          display: block !important;
-        }
-        .leaflet-draw-toolbar a {
-          display: block !important;
-          width: 30px !important;
-          height: 30px !important;
-          background-color: white !important;
-          margin-top: 0 !important;
-        }
-        .leaflet-draw-draw-polygon {
-          background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><path d="M10,17L20,10L26,18L13,25L3,14L10,17z" stroke="black" stroke-width="2" fill="none"/></svg>') !important;
-          background-position: center !important;
-          background-repeat: no-repeat !important;
-        }
-      `;
-      document.head.appendChild(inlineStyles);
-      console.log("Added inline styles for Leaflet Draw");
-      
-      // Dynamically load Leaflet Draw CSS
-      const linkElement = document.createElement('link');
-      linkElement.rel = 'stylesheet';
-      linkElement.href = 'https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css';
-      document.head.appendChild(linkElement);
-      
-      // Dynamically load Leaflet Draw JS if not already loaded
-      if (!(window as any).L?.Draw) {
-        const scriptElement = document.createElement('script');
-        scriptElement.src = 'https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js';
-        scriptElement.onload = () => {
-          console.log('Leaflet Draw script loaded directly in admin page');
-        };
-        document.body.appendChild(scriptElement);
-      }
-      
-      // Verify loading after a delay
-      setTimeout(() => {
-        console.log("Verifying Leaflet Draw loaded:", (window as any).L?.Draw ? "YES" : "NO");
-        console.log("Draw Controls in DOM:", document.querySelectorAll('.leaflet-draw').length);
-      }, 3000);
-    }
-  }, []);
-  
-  return null;
-}
-
 export default function AdminPage() {
   const [title, setTitle] = useState('');
   const [context, setContext] = useState('');
@@ -86,64 +25,6 @@ export default function AdminPage() {
   const [message, setMessage] = useState({ text: '', type: '' });
   const [showRadar, setShowRadar] = useState(true);
   const [severityFilter, setSeverityFilter] = useState<string>('all');
-  
-  // Add script tag for direct draw controls
-  useEffect(() => {
-    // Remove old script if exists
-    const oldScript = document.getElementById('draw-control-script');
-    if (oldScript) {
-      oldScript.remove();
-    }
-    
-    // Load our new direct approach script
-    const script = document.createElement('script');
-    script.id = 'draw-control-script';
-    script.src = '/direct-draw.js';
-    script.async = true;
-    document.body.appendChild(script);
-    
-    console.log("Loaded new direct drawing script");
-    
-    // Add event listener for the custom polygon event
-    const handlePolygonDrawn = (event) => {
-      console.log("Polygon drawn event received:", event.detail);
-      if (event.detail && event.detail.polygon) {
-        handlePolygonCreated(event.detail.polygon);
-      }
-    };
-    
-    // Listen for the custom event
-    document.addEventListener('polygonDrawn', handlePolygonDrawn);
-    
-    // Check for global polygon data
-    const checkPolygonData = () => {
-      if ((window as any).drawnPolygonCoordinates) {
-        console.log("Found global polygon data:", (window as any).drawnPolygonCoordinates);
-        handlePolygonCreated((window as any).drawnPolygonCoordinates);
-        (window as any).drawnPolygonCoordinates = null;
-      }
-    };
-    
-    // Check periodically for polygon data
-    const intervalId = setInterval(checkPolygonData, 1000);
-    
-    return () => {
-      // Clean up script on unmount
-      const script = document.getElementById('draw-control-script');
-      if (script) {
-        script.remove();
-      }
-      // Remove any buttons added by the script
-      const button = document.getElementById('direct-draw-button');
-      if (button) {
-        button.remove();
-      }
-      // Remove event listener
-      document.removeEventListener('polygonDrawn', handlePolygonDrawn);
-      // Clear interval
-      clearInterval(intervalId);
-    };
-  }, []);
   
   // Fetch warnings only once when the component loads
   useEffect(() => {
@@ -282,7 +163,6 @@ export default function AdminPage() {
       <Head>
         <title>Warning System - Admin Panel</title>
       </Head>
-      <LeafletDrawLoader />
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Warning System - Admin Panel</h1>
       
       <div className="mb-4 flex justify-end">

@@ -193,168 +193,101 @@ export default function Map({
     
     // Add the editable layers to the map if in edit mode
     if (editMode) {
-      console.log("Edit mode is enabled, setting up drawing tools");
+      console.log("Edit mode is enabled");
       
       // Create editable layer and add to map
-      const layers = new L.FeatureGroup();
-      editableLayers.current = layers;
-      currentMap.addLayer(layers);
-      console.log("Editable layers added to map");
+      const editableLayer = new L.FeatureGroup();
+      editableLayers.current = editableLayer;
+      currentMap.addLayer(editableLayer);
       
-      // EXPLICITLY ADD THE DRAW CONTROL WITH INLINE STYLES
-      setTimeout(() => {
-        try {
-          console.log("Adding direct draw control with inline styles");
-          
-          // Find the control container
-          const container = document.querySelector('.leaflet-top.leaflet-right');
-          if (!container) {
-            console.error("Cannot find .leaflet-top.leaflet-right container");
-            return;
-          }
-          
-          // Create a control container with inline styles
-          const drawControl = document.createElement('div');
-          drawControl.className = 'leaflet-control-draw leaflet-bar leaflet-control';
-          drawControl.style.cssText = 'display: block !important; visibility: visible !important; z-index: 1000 !important; background: white; border: 2px solid rgba(0,0,0,0.2); border-radius: 4px;';
-
-          // Create a toolbar
-          const toolbar = document.createElement('a');
-          toolbar.className = 'leaflet-draw-draw-polygon';
-          toolbar.href = '#';
-          toolbar.title = 'Draw a polygon';
-          
-          // Set inline styles for the polygon button
-          toolbar.style.cssText = `
-            display: block !important;
-            width: 30px !important;
-            height: 30px !important;
-            background-color: white !important;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><path d="M10,17L20,10L26,18L13,25L3,14L10,17z" stroke="black" stroke-width="2" fill="none"/></svg>') !important;
-            background-position: center !important;
-            background-repeat: no-repeat !important;
-            border-bottom: 1px solid #ccc !important;
-          `;
-
-          // Add click handler
-          toolbar.onclick = (e) => {
-            e.preventDefault();
-            console.log("Custom polygon button clicked");
-            
-            // Try to start drawing mode
-            try {
-              if (typeof (L as any).Draw === 'undefined') {
-                console.error("Leaflet.Draw not available for custom button");
-                alert("Drawing tools are not loaded properly. Please refresh the page.");
-                return;
-              }
-              
-              const handler = new ((L as any).Draw.Polygon)(currentMap, {
-                showArea: true,
-                allowIntersection: false,
-                shapeOptions: {
-                  color: '#ff0000'
-                }
-              });
-              handler.enable();
-              console.log("Draw handler enabled");
-            } catch (err) {
-              console.error("Error enabling drawing:", err);
-            }
-          };
-          
-          // Add to DOM
-          drawControl.appendChild(toolbar);
-          container.appendChild(drawControl);
-          console.log("Custom draw control added to DOM:", drawControl);
-          
-          // Verify it's in the DOM
-          const addedControl = document.querySelector('.leaflet-control-draw');
-          console.log("Is control in DOM:", !!addedControl);
-          
-          // Also attempt standard initialization as backup
-          initializeDrawControls(currentMap);
-        } catch (err) {
-          console.error("Error creating inline control:", err);
-        }
-      }, 1000); // Short delay to ensure map is fully rendered
-    }
-  }, [editMode]);
-  
-  // Separate function to initialize draw controls
-  const initializeDrawControls = (mapInstance) => {
-    try {
-      // Access Leaflet.Draw namespace regardless of TypeScript errors
-      const L_Draw = (L as any).Draw;
-      
-      // Create a new feature group for editable layers
-      const layers = new L.FeatureGroup();
-      editableLayers.current = layers;
-      mapInstance.addLayer(layers);
-      
-      // Define draw options
-      const drawOptions = {
+      // Create the draw control
+      const drawControl = new (L as any).Control.Draw({
         position: 'topright',
         draw: {
           polyline: false,
+          rectangle: false,
+          circle: false,
+          circlemarker: false,
+          marker: false,
           polygon: {
             allowIntersection: false,
             showArea: true,
             drawError: {
               color: '#e1e100',
-              message: '<strong>Cannot draw intersecting shapes!</strong>'
+              message: '<strong>Error:</strong> Polygon edges cannot cross!'
             },
             shapeOptions: {
-              color: '#ff0000'
+              color: '#ff0000',
+              fillOpacity: 0.2
             }
-          },
-          circle: false,
-          rectangle: false,
-          marker: false,
-          circlemarker: false
+          }
         },
         edit: {
-          featureGroup: layers,
+          featureGroup: editableLayer,
           remove: true
         }
-      };
+      });
       
-      // Create draw control and add it to the map
-      const DrawControl = (L.Control as any).Draw;
-      const drawControl = new DrawControl(drawOptions);
-      mapInstance.addControl(drawControl);
+      // Add draw control to map
+      currentMap.addControl(drawControl);
       setDrawControl(drawControl);
-      console.log("Draw control added to map", drawControl);
+      console.log("Draw control added to map");
       
-      // Verify the control is in the DOM
-      setTimeout(() => {
-        const controls = document.querySelectorAll('.leaflet-draw');
-        console.log(`Found ${controls.length} draw controls in DOM`, controls);
+      // Add event handlers
+      currentMap.on('draw:created', function(e: any) {
+        console.log("Polygon created event", e);
+        const layer = e.layer;
         
-        const polygonButton = document.querySelector('.leaflet-draw-draw-polygon');
-        console.log("Polygon button found:", polygonButton);
+        // Add the layer to our editable layer
+        editableLayer.addLayer(layer);
         
-        if (!polygonButton) {
-          console.log("DOM structure:", document.querySelector('.leaflet-control-container')?.innerHTML);
+        // Get the polygon coordinates
+        const polygonCoordinates = layer.getLatLngs()[0].map((point: any) => {
+          return [point.lat, point.lng];
+        });
+        
+        // Close the polygon by adding the first point at the end
+        polygonCoordinates.push(polygonCoordinates[0]);
+        
+        // Format how the app expects it
+        const formattedPolygon = [polygonCoordinates];
+        
+        if (onPolygonCreated) {
+          onPolygonCreated(formattedPolygon);
         }
-      }, 500);
+      });
       
-      // Register event handlers
-      mapInstance.on(L_Draw.Event.CREATED, handlePolygonCreated);
-      mapInstance.on(L_Draw.Event.EDITED, handlePolygonEdited);
-      mapInstance.on(L_Draw.Event.DELETED, handlePolygonDeleted);
+      currentMap.on('draw:edited', function(e: any) {
+        console.log("Polygon edited event", e);
+        const layers = e.layers;
+        
+        // Extract all polygons
+        const editedPolygon: any = [];
+        layers.eachLayer(function(layer: any) {
+          const polygonCoordinates = layer.getLatLngs()[0].map((point: any) => {
+            return [point.lat, point.lng];
+          });
+          
+          // Close the polygon
+          polygonCoordinates.push(polygonCoordinates[0]);
+          editedPolygon.push(polygonCoordinates);
+        });
+        
+        if (onPolygonEdited && editedPolygon.length > 0) {
+          onPolygonEdited(editedPolygon);
+        }
+      });
       
-      // Return cleanup function
+      // Clean up event handlers on unmount
       return () => {
-        mapInstance.off(L_Draw.Event.CREATED, handlePolygonCreated);
-        mapInstance.off(L_Draw.Event.EDITED, handlePolygonEdited);
-        mapInstance.off(L_Draw.Event.DELETED, handlePolygonDeleted);
-        mapInstance.removeControl(drawControl);
+        currentMap.off('draw:created');
+        currentMap.off('draw:edited');
+        if (drawControl) {
+          currentMap.removeControl(drawControl);
+        }
       };
-    } catch (error) {
-      console.error("Error initializing draw controls:", error);
     }
-  };
+  }, [editMode, onPolygonCreated, onPolygonEdited]);
   
   // Handle different radar types
   useEffect(() => {
@@ -487,79 +420,6 @@ export default function Map({
     
     setRadarControls(controls);
   }, [setRadarControls, currentTimestamp, currentProduct, radarType]);
-  
-  // Handle polygon creation
-  const handlePolygonCreated = (event) => {
-    try {
-      const layer = event.layer;
-      editableLayers.current.addLayer(layer);
-      
-      // Extract polygon coordinates
-      const polygon = layer.getLatLngs()[0];
-      
-      // Convert to [[lng, lat], [lng, lat], ...] format for GeoJSON
-      const coordinates = polygon.map(point => [point.lng, point.lat]);
-      
-      // Close the polygon by repeating the first point
-      if (coordinates.length > 0 && 
-          (coordinates[0][0] !== coordinates[coordinates.length - 1][0] || 
-           coordinates[0][1] !== coordinates[coordinates.length - 1][1])) {
-        coordinates.push([...coordinates[0]]);
-      }
-      
-      // Pass coordinates to the parent component in the format expected by MongoDB ([[[lng, lat], ...]])
-      if (onPolygonCreated) {
-        onPolygonCreated([[coordinates]]);
-      }
-      
-      console.log("Polygon created:", coordinates);
-    } catch (error) {
-      console.error("Error handling polygon creation:", error);
-    }
-  };
-  
-  // Handle polygon editing
-  const handlePolygonEdited = (event) => {
-    try {
-      const layers = event.layers;
-      layers.eachLayer((layer) => {
-        const polygon = layer.getLatLngs()[0];
-        
-        // Convert to [[lng, lat], [lng, lat], ...] format for GeoJSON
-        const coordinates = polygon.map(point => [point.lng, point.lat]);
-        
-        // Close the polygon
-        if (coordinates.length > 0 &&
-            (coordinates[0][0] !== coordinates[coordinates.length - 1][0] ||
-             coordinates[0][1] !== coordinates[coordinates.length - 1][1])) {
-          coordinates.push([...coordinates[0]]);
-        }
-        
-        // Pass coordinates to the parent component
-        if (onPolygonEdited) {
-          onPolygonEdited([[coordinates]]);
-        }
-        
-        console.log("Polygon edited:", coordinates);
-      });
-    } catch (error) {
-      console.error("Error handling polygon edit:", error);
-    }
-  };
-  
-  // Handle polygon deletion
-  const handlePolygonDeleted = (event) => {
-    try {
-      console.log("Polygon deleted");
-      
-      // Clear the polygon data in the parent component
-      if (onPolygonEdited) {
-        onPolygonEdited([[]]);
-      }
-    } catch (error) {
-      console.error("Error handling polygon deletion:", error);
-    }
-  };
   
   // Handle warning clicks
   const handleWarningClick = (warning) => {
