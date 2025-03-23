@@ -1,10 +1,7 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
-import Head from 'next/head';
-
-// Leaflet and Leaflet Draw
 import 'leaflet/dist/leaflet.css';
-import 'leaflet-draw/dist/leaflet.draw.css'; 
+// We'll handle Leaflet Draw CSS directly in Map.tsx component to avoid build issues
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -21,13 +18,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Ensure Leaflet Draw loads properly */}
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer async />
-        <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js" defer async />
+        {/* Leaflet CSS is imported directly in the components that need it */}
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <main className="min-h-screen bg-gray-50">
+          {children}
+        </main>
+      </body>
     </html>
   );
 }

@@ -22,21 +22,50 @@ const nextConfig = {
   },
   
   // Configure webpack to handle SVG files and path aliases
-  webpack(config) {
-    // SVG handling
+  webpack: (config) => {
+    // Add support for SVG files
     config.module.rules.push({
       test: /\.svg$/,
-      use: ['@svgr/webpack'],
+      use: ['@svgr/webpack', 'url-loader'],
+      include: [/node_modules\/leaflet-draw/],
     });
 
-    // Explicitly set up path aliases
+    // Add support for image files in leaflet-draw
+    config.module.rules.push({
+      test: /\.(png|jpe?g|gif)$/i,
+      use: [{
+        loader: 'file-loader',
+        options: {
+          publicPath: '/_next',
+          name: 'static/media/[name].[hash].[ext]',
+        },
+      }],
+      include: [/node_modules\/leaflet-draw/],
+    });
+
+    // Resolve path aliases
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname),
-      'leaflet': path.resolve(__dirname, 'node_modules/leaflet'),
-      'leaflet-draw': path.resolve(__dirname, 'node_modules/leaflet-draw'),
+      'leaflet': require.resolve('leaflet'),
+      'leaflet-draw': require.resolve('leaflet-draw'),
     };
-    
+
+    // Explicitly transpile leaflet packages
+    config.module.rules.push({
+      test: /\.js$/,
+      include: [
+        /node_modules\/leaflet/,
+        /node_modules\/leaflet-draw/,
+      ],
+      use: {
+        loader: 'babel-loader',
+        options: {
+          presets: ['next/babel'],
+        },
+      },
+    });
+
     return config;
   },
   
@@ -45,11 +74,7 @@ const nextConfig = {
   
   // Add middleware configuration to ensure it only applies to admin routes
   experimental: {
-    middleware: {
-      // Only apply middleware to admin paths
-      skipMiddlewareUrlNormalize: true,
-      skipTrailingSlashRedirect: true,
-    },
+    // middleware: {}, // Remove this if present
   },
 };
 
