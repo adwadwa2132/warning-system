@@ -106,6 +106,7 @@ export default function Map({
   const drawControlRef = useRef(null);
   const [drawControl, setDrawControl] = useState(null);
   const editableLayers = useRef(new L.FeatureGroup());
+  const mapRef = useRef(null);
   
   // Debug warnings data
   useEffect(() => {
@@ -116,62 +117,63 @@ export default function Map({
     }
   }, [warnings]);
   
-  // Set up the map instance when component mounts
-  const onMapCreated = useCallback((mapInstance) => {
-    console.log("Map instance created", mapInstance);
-    setMap(mapInstance);
-    
-    // Add the editable layers to the map if in edit mode
-    if (editMode) {
-      editableLayers.current.addTo(mapInstance);
+  // Initialize map when it's ready
+  useEffect(() => {
+    if (mapRef.current) {
+      const mapInstance = mapRef.current;
+      console.log("Map instance created", mapInstance);
+      setMap(mapInstance);
       
-      // Initialize draw controls immediately after map creation
-      try {
-        // Create the draw control
-        const drawControlOptions = {
-          position: 'topright',
-          draw: {
-            polyline: false,
-            circle: false,
-            circlemarker: false,
-            rectangle: false,
-            marker: false,
-            polygon: {
-              allowIntersection: false,
-              drawError: {
-                color: '#e1e100',
-                message: 'Polygons cannot intersect!'
-              },
-              shapeOptions: {
-                color: '#3388ff',
-                weight: 2
+      // Add the editable layers to the map if in edit mode
+      if (editMode) {
+        editableLayers.current.addTo(mapInstance);
+        
+        // Initialize draw controls
+        try {
+          // Create the draw control
+          const drawControlOptions = {
+            position: 'topright',
+            draw: {
+              polyline: false,
+              circle: false,
+              circlemarker: false,
+              rectangle: false,
+              marker: false,
+              polygon: {
+                allowIntersection: false,
+                drawError: {
+                  color: '#e1e100',
+                  message: 'Polygons cannot intersect!'
+                },
+                shapeOptions: {
+                  color: '#3388ff',
+                  weight: 2
+                }
               }
+            },
+            edit: {
+              featureGroup: editableLayers.current,
+              remove: true
             }
-          },
-          edit: {
-            featureGroup: editableLayers.current,
-            remove: true
-          }
-        };
-        
-        // @ts-ignore
-        const control = new L.Control.Draw(drawControlOptions);
-        mapInstance.addControl(control);
-        setDrawControl(control);
-        
-        console.log("Draw control added to map directly");
-        
-        // Setup event handlers for draw/edit events
-        mapInstance.on(L.Draw.Event.CREATED, event => handlePolygonCreated(event));
-        mapInstance.on(L.Draw.Event.EDITED, event => handlePolygonEdited(event));
-        mapInstance.on(L.Draw.Event.DELETED, event => handlePolygonDeleted(event));
-      } catch (error) {
-        console.error("Error setting up draw controls during map creation:", error);
+          };
+          
+          // @ts-ignore
+          const control = new L.Control.Draw(drawControlOptions);
+          mapInstance.addControl(control);
+          setDrawControl(control);
+          
+          console.log("Draw control added to map directly");
+          
+          // Setup event handlers for draw/edit events
+          mapInstance.on(L.Draw.Event.CREATED, event => handlePolygonCreated(event));
+          mapInstance.on(L.Draw.Event.EDITED, event => handlePolygonEdited(event));
+          mapInstance.on(L.Draw.Event.DELETED, event => handlePolygonDeleted(event));
+        } catch (error) {
+          console.error("Error setting up draw controls during map creation:", error);
+        }
       }
     }
-    
-    // Initialize radar immediately - we'll do this in a useEffect instead
-  }, [editMode]);
+  }, [mapRef.current, editMode]);
   
   // Handle different radar types
   useEffect(() => {
@@ -468,9 +470,9 @@ export default function Map({
         center={center as [number, number]}
         zoom={zoom}
         style={{ height: '100%', width: '100%' }}
-        ref={map => {
+        ref={(map) => {
           if (map) {
-            onMapCreated(map);
+            mapRef.current = map;
           }
         }}
         zoomControl={false}
