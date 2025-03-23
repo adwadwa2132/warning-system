@@ -3,8 +3,19 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Polygon, useMap, LayersControl, ZoomControl, Popup } from 'react-leaflet';
-import 'leaflet-draw';
 import React from 'react';
+
+// We need to manually ensure leaflet-draw is loaded
+// This ensures the L.Draw namespace is available
+if (typeof window !== 'undefined') {
+  // Only run on client side
+  try {
+    require('leaflet-draw');
+    console.log("Leaflet Draw imported successfully");
+  } catch (e) {
+    console.error("Failed to import leaflet-draw:", e);
+  }
+}
 
 // Fix for the Leaflet icon issue
 function FixLeafletIcons() {
@@ -117,6 +128,24 @@ export default function Map({
     }
   }, [warnings]);
   
+  // Define custom type for Leaflet Draw
+  type LeafletWithDraw = typeof L & {
+    Draw: {
+      Event: {
+        CREATED: string;
+        EDITED: string;
+        DELETED: string;
+      };
+      Control: any;
+    };
+    Control: {
+      Draw: any;
+    } & typeof L.Control;
+  };
+
+  // Cast L to our custom type that includes Draw
+  const LeafletWithDrawing = L as LeafletWithDraw;
+  
   // Initialize map when it's ready
   useEffect(() => {
     const currentMap = mapRef.current;
@@ -129,84 +158,102 @@ export default function Map({
     if (editMode) {
       console.log("Edit mode is enabled, setting up drawing tools");
       
-      // First make sure we're working with the L.Draw namespace
-      if (!L.Draw) {
-        console.error("Leaflet Draw plugin is not available!");
+      // Check if Leaflet Draw is loaded by trying to access it
+      if (typeof (L as any).Draw === 'undefined') {
+        console.error("Leaflet Draw plugin is not available! Trying to load it manually...");
+        
+        // Try to load Leaflet Draw dynamically if it's not already loaded
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js';
+        script.onload = () => {
+          console.log("Leaflet Draw loaded manually, initializing draw controls now");
+          initializeDrawControls(currentMap);
+        };
+        script.onerror = () => {
+          console.error("Failed to load Leaflet Draw script");
+        };
+        document.head.appendChild(script);
         return;
       }
       
-      // Add the editable layers FeatureGroup to the map
-      editableLayers.current = new L.FeatureGroup();
-      editableLayers.current.addTo(currentMap);
+      initializeDrawControls(currentMap);
+    }
+  }, [editMode]);
+  
+  // Separate function to initialize draw controls
+  const initializeDrawControls = (mapInstance) => {
+    try {
+      // Access Leaflet.Draw namespace regardless of TypeScript errors
+      const L_Draw = (L as any).Draw;
       
-      // Create draw options with specific settings for polygon
+      // Create a new feature group for editable layers
+      const layers = new L.FeatureGroup();
+      editableLayers.current = layers;
+      mapInstance.addLayer(layers);
+      
+      // Define draw options
       const drawOptions = {
-        polyline: false as const,
-        circle: false as const,
-        circlemarker: false as const,
-        rectangle: false as const,
-        marker: false as const,
-        polygon: {
-          allowIntersection: false,
-          drawError: {
-            color: '#e1e100',
-            message: 'Polygons cannot intersect!'
+        position: 'topright',
+        draw: {
+          polyline: false,
+          polygon: {
+            allowIntersection: false,
+            showArea: true,
+            drawError: {
+              color: '#e1e100',
+              message: '<strong>Cannot draw intersecting shapes!</strong>'
+            },
+            shapeOptions: {
+              color: '#ff0000'
+            }
           },
-          shapeOptions: {
-            color: '#3388ff',
-            weight: 2
-          }
+          circle: false,
+          rectangle: false,
+          marker: false,
+          circlemarker: false
+        },
+        edit: {
+          featureGroup: layers,
+          remove: true
         }
       };
       
-      // Create edit options
-      const editOptions = {
-        featureGroup: editableLayers.current,
-        remove: true
-      };
+      // Create draw control and add it to the map
+      const DrawControl = (L.Control as any).Draw;
+      const drawControl = new DrawControl(drawOptions);
+      mapInstance.addControl(drawControl);
+      setDrawControl(drawControl);
+      console.log("Draw control added to map", drawControl);
       
-      try {
-        // Create the draw control with proper options
-        const control = new L.Control.Draw({
-          position: 'topright',
-          draw: drawOptions,
-          edit: editOptions
-        });
+      // Verify the control is in the DOM
+      setTimeout(() => {
+        const controls = document.querySelectorAll('.leaflet-draw');
+        console.log(`Found ${controls.length} draw controls in DOM`, controls);
         
-        // Add the control to the map
-        currentMap.addControl(control);
-        console.log("Draw control successfully added to map", control);
+        const polygonButton = document.querySelector('.leaflet-draw-draw-polygon');
+        console.log("Polygon button found:", polygonButton);
         
-        // Debug: Check if the control has been added to the DOM
-        setTimeout(() => {
-          const drawControls = document.querySelectorAll('.leaflet-draw');
-          console.log("Draw controls in DOM:", drawControls.length, drawControls);
-          
-          const polygonButton = document.querySelector('.leaflet-draw-draw-polygon');
-          console.log("Polygon button found:", polygonButton);
-        }, 500);
-        
-        setDrawControl(control);
-        
-        // Set up event handlers for drawing actions
-        currentMap.on(L.Draw.Event.CREATED, handlePolygonCreated);
-        currentMap.on(L.Draw.Event.EDITED, handlePolygonEdited);
-        currentMap.on(L.Draw.Event.DELETED, handlePolygonDeleted);
-        
-        // Clean up on unmount
-        return () => {
-          currentMap.off(L.Draw.Event.CREATED, handlePolygonCreated);
-          currentMap.off(L.Draw.Event.EDITED, handlePolygonEdited);
-          currentMap.off(L.Draw.Event.DELETED, handlePolygonDeleted);
-          if (control) {
-            currentMap.removeControl(control);
-          }
-        };
-      } catch (error) {
-        console.error("Error setting up draw controls:", error);
-      }
+        if (!polygonButton) {
+          console.log("DOM structure:", document.querySelector('.leaflet-control-container')?.innerHTML);
+        }
+      }, 500);
+      
+      // Register event handlers
+      mapInstance.on(L_Draw.Event.CREATED, handlePolygonCreated);
+      mapInstance.on(L_Draw.Event.EDITED, handlePolygonEdited);
+      mapInstance.on(L_Draw.Event.DELETED, handlePolygonDeleted);
+      
+      // Return cleanup function
+      return () => {
+        mapInstance.off(L_Draw.Event.CREATED, handlePolygonCreated);
+        mapInstance.off(L_Draw.Event.EDITED, handlePolygonEdited);
+        mapInstance.off(L_Draw.Event.DELETED, handlePolygonDeleted);
+        mapInstance.removeControl(drawControl);
+      };
+    } catch (error) {
+      console.error("Error initializing draw controls:", error);
     }
-  }, [editMode]);
+  };
   
   // Handle different radar types
   useEffect(() => {
