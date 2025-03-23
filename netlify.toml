@@ -1,12 +1,11 @@
 [build]
-  command = "rm -rf node_modules package-lock.json && NODE_ENV=development npm install && CI=false NEXT_PUBLIC_SKIP_TYPE_CHECK=true npm run build"
+  command = "rm -rf node_modules package-lock.json && NETLIFY=true NODE_ENV=development npm install --legacy-peer-deps && NETLIFY=true NODE_ENV=development CI=false NEXT_PUBLIC_SKIP_TYPE_CHECK=true npm run build"
   publish = ".next"
 
 [build.environment]
   MONGODB_URI = ""
   ADMIN_USERNAME = ""
   ADMIN_PASSWORD = ""
-  NODE_ENV = "production"
   NODE_VERSION = "18.20.0"
   NEXT_TELEMETRY_DISABLED = "1"
   # Skip Netlify Next.js plugin

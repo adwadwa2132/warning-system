@@ -1,39 +1,30 @@
 'use client';
 
-import React from 'react';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Polygon, useMap, LayersControl, ZoomControl, Popup } from 'react-leaflet';
 
-// Remove direct CSS imports since they're causing build issues
-// import 'leaflet/dist/leaflet.css';
-// import '../../styles/LeafletDrawStyles.css';
+// Skip direct CSS imports and handle them through webpack config
 
-// We need to manually ensure leaflet-draw is loaded
-// This ensures the L.Draw namespace is available
+// We need to manually fix Leaflet icon paths on client side
 if (typeof window !== 'undefined') {
   // Only run on client side
   try {
+    // Load Leaflet Draw plugin
     require('leaflet-draw');
-    console.log("Leaflet Draw imported successfully");
-  } catch (e) {
-    console.error("Failed to import leaflet-draw:", e);
-  }
-}
-
-// Fix for the Leaflet icon issue
-function FixLeafletIcons() {
-  useEffect(() => {
-    // @ts-ignore
-    delete L.Icon.Default.prototype._getIconUrl;
+    
+    // Fix Leaflet default icon paths
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
-      iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-      iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-      shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+      iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+      iconUrl: '/leaflet/marker-icon.png',
+      shadowUrl: '/leaflet/marker-shadow.png',
     });
-  }, []);
-  
-  return null;
+    
+    console.log("Leaflet Draw loaded and icons fixed");
+  } catch (e) {
+    console.error("Failed to initialize Leaflet:", e);
+  }
 }
 
 // Console logging component to debug map mounting
@@ -509,94 +500,69 @@ export default function Map({
   
   return (
     <div style={{ height: '100%', width: '100%' }}>
-      <FixLeafletIcons />
+      <MapDebugger />
+      <ZoomControl position="bottomright" />
       
-      <MapContainer
-        center={center as [number, number]}
-        zoom={zoom}
-        style={{ height: '100%', width: '100%' }}
-        ref={(map) => {
-          if (map) {
-            mapRef.current = map;
-          }
-        }}
-        zoomControl={false}
-      >
-        <MapDebugger />
-        <ZoomControl position="bottomright" />
-        
-        <LayersControl position="bottomleft">
-          <LayersControl.BaseLayer name="OpenStreetMap" checked>
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Satellite">
-            <TileLayer
-              attribution='&copy; <a href="https://www.mapbox.com/">Mapbox</a>'
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            />
-          </LayersControl.BaseLayer>
-        </LayersControl>
-        
-        {/* Render warning polygons */}
-        {warnings && warnings.map((warning) => {
-          const polygon = formatPolygonData(warning.polygon);
-          if (polygon.length === 0) return null;
-          
-          return (
-            <Polygon
-              key={warning._id}
-              positions={polygon}
-              pathOptions={{
-                color: warning.color || '#3388ff',
-                weight: 2,
-                fillOpacity: 0.3,
-                opacity: 0.8,
-                fillColor: warning.color || '#3388ff'
-              }}
-              eventHandlers={{
-                click: () => handleWarningClick(warning),
-                mouseover: (e) => {
-                  const layer = e.target;
-                  layer.setStyle({
-                    weight: 4,
-                    fillOpacity: 0.5,
-                  });
-                },
-                mouseout: (e) => {
-                  const layer = e.target;
-                  layer.setStyle({
-                    weight: 2,
-                    fillOpacity: 0.3,
-                  });
-                }
-              }}
-            >
-              <Popup>
-                <div className="warning-popup">
-                  <h3>{warning.title}</h3>
-                  <p><strong>Severity:</strong> {warning.severity || 'Not specified'}</p>
-                  <p><strong>Expires:</strong> {new Date(warning.expiresAt).toLocaleString()}</p>
-                  <p>{warning.context}</p>
-                </div>
-              </Popup>
-            </Polygon>
-          );
-        })}
-      </MapContainer>
+      <LayersControl position="bottomleft">
+        <LayersControl.BaseLayer name="OpenStreetMap" checked>
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer name="Satellite">
+          <TileLayer
+            attribution='&copy; <a href="https://www.mapbox.com/">Mapbox</a>'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          />
+        </LayersControl.BaseLayer>
+      </LayersControl>
       
-      {/* Render radar controls below map if needed and in MRMS mode */}
-      {showRadar && radarType === 'mrms' && (
-        <RadarControls 
-          radarData={radarData} 
-          currentTimestamp={currentTimestamp} 
-          refreshRadar={fetchMrmsData}
-          currentProduct={currentProduct}
-          setProduct={setCurrentProduct}
-        />
-      )}
+      {/* Render warning polygons */}
+      {warnings && warnings.map((warning) => {
+        const polygon = formatPolygonData(warning.polygon);
+        if (polygon.length === 0) return null;
+        
+        return (
+          <Polygon
+            key={warning._id}
+            positions={polygon}
+            pathOptions={{
+              color: warning.color || '#3388ff',
+              weight: 2,
+              fillOpacity: 0.3,
+              opacity: 0.8,
+              fillColor: warning.color || '#3388ff'
+            }}
+            eventHandlers={{
+              click: () => handleWarningClick(warning),
+              mouseover: (e) => {
+                const layer = e.target;
+                layer.setStyle({
+                  weight: 4,
+                  fillOpacity: 0.5,
+                });
+              },
+              mouseout: (e) => {
+                const layer = e.target;
+                layer.setStyle({
+                  weight: 2,
+                  fillOpacity: 0.3,
+                });
+              }
+            }}
+          >
+            <Popup>
+              <div className="warning-popup">
+                <h3>{warning.title}</h3>
+                <p><strong>Severity:</strong> {warning.severity || 'Not specified'}</p>
+                <p><strong>Expires:</strong> {new Date(warning.expiresAt).toLocaleString()}</p>
+                <p>{warning.context}</p>
+              </div>
+            </Popup>
+          </Polygon>
+        );
+      })}
     </div>
   );
 } 

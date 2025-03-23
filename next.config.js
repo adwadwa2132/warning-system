@@ -26,34 +26,46 @@ const nextConfig = {
   
   // Configure webpack to handle SVG files and path aliases
   webpack: (config) => {
-    // Handle all CSS imports (not just ones from node_modules)
+    // First, remove any existing CSS rules that might conflict
+    const cssRules = config.module.rules.filter(rule => 
+      rule.test && rule.test.toString().includes('.css')
+    );
+    
+    const filteredRules = config.module.rules.filter(rule => 
+      !rule.test || !rule.test.toString().includes('.css')
+    );
+    
+    config.module.rules = filteredRules;
+    
+    // Now add a single, comprehensive CSS rule
     config.module.rules.push({
       test: /\.css$/,
-      use: ['style-loader', 'css-loader', 'postcss-loader'],
-      // No include filter to apply to all CSS files
-    });
-
-    // Handle CSS imports from specific modules
-    config.module.rules.push({
-      test: /\.css$/,
-      use: ['style-loader', 'css-loader'],
-      include: [
-        /node_modules\/leaflet/,
-        /node_modules\/leaflet-draw/,
-        /node_modules\/react-datepicker/,
+      use: [
+        'style-loader', 
+        {
+          loader: 'css-loader',
+          options: {
+            importLoaders: 1,
+            sourceMap: true,
+          },
+        },
+        {
+          loader: 'postcss-loader',
+          options: {
+            sourceMap: true,
+          },
+        }
       ],
+      // No include filter to handle all CSS files
     });
 
     // Add support for SVG files
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack', 'url-loader'],
-      include: [
-        /node_modules\/leaflet-draw/,
-      ],
     });
 
-    // Add support for image files in leaflet-draw
+    // Add support for all image files
     config.module.rules.push({
       test: /\.(png|jpe?g|gif)$/i,
       use: [{
@@ -63,10 +75,6 @@ const nextConfig = {
           name: 'static/media/[name].[hash].[ext]',
         },
       }],
-      include: [
-        /node_modules\/leaflet/,
-        /node_modules\/leaflet-draw/,
-      ],
     });
 
     // Resolve path aliases
@@ -75,10 +83,9 @@ const nextConfig = {
       '@': path.resolve(__dirname),
       'leaflet': require.resolve('leaflet'),
       'leaflet-draw': require.resolve('leaflet-draw'),
-      'leaflet/dist/leaflet.css': path.resolve(__dirname, 'node_modules/leaflet/dist/leaflet.css'),
     };
 
-    // Explicitly transpile leaflet packages
+    // Explicitly transpile packages
     config.module.rules.push({
       test: /\.js$/,
       include: [
@@ -106,7 +113,7 @@ const nextConfig = {
   },
   
   // External modules that should be transpiled
-  transpilePackages: ['react-leaflet', '@react-leaflet', 'leaflet', 'leaflet-draw'],
+  transpilePackages: ['react-leaflet', '@react-leaflet', 'leaflet', 'leaflet-draw', 'react-datepicker'],
   
   // Add middleware configuration to ensure it only applies to admin routes
   experimental: {},
