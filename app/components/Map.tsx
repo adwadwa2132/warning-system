@@ -158,104 +158,89 @@ export default function Map({
     if (editMode) {
       console.log("Edit mode is enabled, setting up drawing tools");
       
-      // Make sure the CSS is loaded (fallback for production/Netlify)
-      const ensureStylesLoaded = () => {
-        // Check if leaflet-draw CSS is loaded
-        const leafletDrawStyles = document.querySelector('link[href*="leaflet.draw.css"]');
-        if (!leafletDrawStyles) {
-          console.log("Dynamically adding leaflet-draw CSS for Netlify");
-          const link = document.createElement('link');
-          link.rel = 'stylesheet';
-          link.href = 'https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css';
-          document.head.appendChild(link);
-        }
-      };
+      // Create editable layer and add to map
+      const layers = new L.FeatureGroup();
+      editableLayers.current = layers;
+      currentMap.addLayer(layers);
+      console.log("Editable layers added to map");
       
-      ensureStylesLoaded();
-      
-      // Check if Leaflet Draw is loaded by trying to access it
-      if (typeof (L as any).Draw === 'undefined') {
-        console.error("Leaflet Draw plugin is not available! Trying to load it manually...");
-        
-        // Try to load Leaflet Draw dynamically if it's not already loaded
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js';
-        script.onload = () => {
-          console.log("Leaflet Draw loaded manually, initializing draw controls now");
-          initializeDrawControls(currentMap);
-        };
-        script.onerror = () => {
-          console.error("Failed to load Leaflet Draw script");
-        };
-        document.head.appendChild(script);
-        return;
-      }
-      
-      // Hacky way to create draw control for Netlify
-      const createDrawControlDirectly = () => {
+      // EXPLICITLY ADD THE DRAW CONTROL WITH INLINE STYLES
+      setTimeout(() => {
         try {
-          console.log("Creating draw controls directly for Netlify");
+          console.log("Adding direct draw control with inline styles");
           
-          // Manually create the draw control HTML structure
-          const controlContainer = document.querySelector('.leaflet-top.leaflet-right');
-          if (!controlContainer) {
-            console.error("Could not find control container");
+          // Find the control container
+          const container = document.querySelector('.leaflet-top.leaflet-right');
+          if (!container) {
+            console.error("Cannot find .leaflet-top.leaflet-right container");
             return;
           }
           
-          // Create draw control container
-          const drawControlDiv = document.createElement('div');
-          drawControlDiv.className = 'leaflet-control-draw leaflet-control';
+          // Create a control container with inline styles
+          const drawControl = document.createElement('div');
+          drawControl.className = 'leaflet-control-draw leaflet-bar leaflet-control';
+          drawControl.style.cssText = 'display: block !important; visibility: visible !important; z-index: 1000 !important; background: white; border: 2px solid rgba(0,0,0,0.2); border-radius: 4px;';
+
+          // Create a toolbar
+          const toolbar = document.createElement('a');
+          toolbar.className = 'leaflet-draw-draw-polygon';
+          toolbar.href = '#';
+          toolbar.title = 'Draw a polygon';
           
-          // Create the toolbar
-          const toolbarDiv = document.createElement('div');
-          toolbarDiv.className = 'leaflet-draw-toolbar leaflet-bar';
-          
-          // Add a polygon button
-          const polygonLink = document.createElement('a');
-          polygonLink.className = 'leaflet-draw-draw-polygon';
-          polygonLink.href = '#';
-          polygonLink.title = 'Draw a polygon';
-          polygonLink.onclick = (e) => {
+          // Set inline styles for the polygon button
+          toolbar.style.cssText = `
+            display: block !important;
+            width: 30px !important;
+            height: 30px !important;
+            background-color: white !important;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><path d="M10,17L20,10L26,18L13,25L3,14L10,17z" stroke="black" stroke-width="2" fill="none"/></svg>') !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+            border-bottom: 1px solid #ccc !important;
+          `;
+
+          // Add click handler
+          toolbar.onclick = (e) => {
             e.preventDefault();
-            console.log("Polygon button clicked");
+            console.log("Custom polygon button clicked");
             
-            // Start polygon drawing mode - this depends on L.Draw being loaded
-            if ((L as any).Draw && (L as any).Draw.Polygon) {
-              const handler = new ((L as any).Draw.Polygon)(currentMap);
+            // Try to start drawing mode
+            try {
+              if (typeof (L as any).Draw === 'undefined') {
+                console.error("Leaflet.Draw not available for custom button");
+                alert("Drawing tools are not loaded properly. Please refresh the page.");
+                return;
+              }
+              
+              const handler = new ((L as any).Draw.Polygon)(currentMap, {
+                showArea: true,
+                allowIntersection: false,
+                shapeOptions: {
+                  color: '#ff0000'
+                }
+              });
               handler.enable();
+              console.log("Draw handler enabled");
+            } catch (err) {
+              console.error("Error enabling drawing:", err);
             }
           };
           
-          // Append elements
-          toolbarDiv.appendChild(polygonLink);
-          drawControlDiv.appendChild(toolbarDiv);
-          controlContainer.appendChild(drawControlDiv);
+          // Add to DOM
+          drawControl.appendChild(toolbar);
+          container.appendChild(drawControl);
+          console.log("Custom draw control added to DOM:", drawControl);
           
-          console.log("Manual draw controls added to DOM");
-        } catch (error) {
-          console.error("Error creating direct draw controls:", error);
+          // Verify it's in the DOM
+          const addedControl = document.querySelector('.leaflet-control-draw');
+          console.log("Is control in DOM:", !!addedControl);
+          
+          // Also attempt standard initialization as backup
+          initializeDrawControls(currentMap);
+        } catch (err) {
+          console.error("Error creating inline control:", err);
         }
-      };
-      
-      // Try the normal initialization first, then fallback to manual method
-      try {
-        initializeDrawControls(currentMap);
-        
-        // Check if controls are visible after a delay
-        setTimeout(() => {
-          const drawControls = document.querySelectorAll('.leaflet-draw');
-          console.log(`Found ${drawControls.length} draw controls in DOM`);
-          
-          if (drawControls.length === 0) {
-            console.log("No draw controls found, trying manual creation");
-            createDrawControlDirectly();
-          }
-        }, 1000);
-      } catch (error) {
-        console.error("Error in normal init, trying direct method:", error);
-        createDrawControlDirectly();
-      }
+      }, 1000); // Short delay to ensure map is fully rendered
     }
   }, [editMode]);
   

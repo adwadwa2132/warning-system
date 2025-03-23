@@ -18,6 +18,35 @@ function LeafletDrawLoader() {
   useEffect(() => {
     // Only run on client side
     if (typeof window !== 'undefined') {
+      console.log("LeafletDrawLoader executing - attempting to load resources");
+      
+      // Force Leaflet Draw CSS with !important rules
+      const inlineStyles = document.createElement('style');
+      inlineStyles.textContent = `
+        .leaflet-draw-section {
+          position: relative !important;
+          display: block !important;
+          visibility: visible !important;
+        }
+        .leaflet-draw-toolbar {
+          display: block !important;
+        }
+        .leaflet-draw-toolbar a {
+          display: block !important;
+          width: 30px !important;
+          height: 30px !important;
+          background-color: white !important;
+          margin-top: 0 !important;
+        }
+        .leaflet-draw-draw-polygon {
+          background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><path d="M10,17L20,10L26,18L13,25L3,14L10,17z" stroke="black" stroke-width="2" fill="none"/></svg>') !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+        }
+      `;
+      document.head.appendChild(inlineStyles);
+      console.log("Added inline styles for Leaflet Draw");
+      
       // Dynamically load Leaflet Draw CSS
       const linkElement = document.createElement('link');
       linkElement.rel = 'stylesheet';
@@ -33,6 +62,12 @@ function LeafletDrawLoader() {
         };
         document.body.appendChild(scriptElement);
       }
+      
+      // Verify loading after a delay
+      setTimeout(() => {
+        console.log("Verifying Leaflet Draw loaded:", (window as any).L?.Draw ? "YES" : "NO");
+        console.log("Draw Controls in DOM:", document.querySelectorAll('.leaflet-draw').length);
+      }, 3000);
     }
   }, []);
   
@@ -51,6 +86,24 @@ export default function AdminPage() {
   const [message, setMessage] = useState({ text: '', type: '' });
   const [showRadar, setShowRadar] = useState(true);
   const [severityFilter, setSeverityFilter] = useState<string>('all');
+  
+  // Add script tag for draw controls
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = '/inject-draw.js';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+    
+    console.log("Injected drawing controls script");
+    
+    return () => {
+      // Clean up the script when component unmounts
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
   
   // Fetch warnings only once when the component loads
   useEffect(() => {
@@ -452,6 +505,11 @@ export default function AdminPage() {
           warnings={filteredWarnings} 
           showRadar={showRadar}
           radarType="mrms"
+          onPolygonCreated={() => {}}
+          onPolygonEdited={() => {}}
+          setRadarControls={() => {}}
+          onWarningClick={() => {}}
+          selectedWarningId={null}
         />
       </div>
     </div>
