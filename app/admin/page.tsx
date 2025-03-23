@@ -104,6 +104,29 @@ export default function AdminPage() {
     
     console.log("Loaded new direct drawing script");
     
+    // Add event listener for the custom polygon event
+    const handlePolygonDrawn = (event) => {
+      console.log("Polygon drawn event received:", event.detail);
+      if (event.detail && event.detail.polygon) {
+        handlePolygonCreated(event.detail.polygon);
+      }
+    };
+    
+    // Listen for the custom event
+    document.addEventListener('polygonDrawn', handlePolygonDrawn);
+    
+    // Check for global polygon data
+    const checkPolygonData = () => {
+      if ((window as any).drawnPolygonCoordinates) {
+        console.log("Found global polygon data:", (window as any).drawnPolygonCoordinates);
+        handlePolygonCreated((window as any).drawnPolygonCoordinates);
+        (window as any).drawnPolygonCoordinates = null;
+      }
+    };
+    
+    // Check periodically for polygon data
+    const intervalId = setInterval(checkPolygonData, 1000);
+    
     return () => {
       // Clean up script on unmount
       const script = document.getElementById('draw-control-script');
@@ -115,6 +138,10 @@ export default function AdminPage() {
       if (button) {
         button.remove();
       }
+      // Remove event listener
+      document.removeEventListener('polygonDrawn', handlePolygonDrawn);
+      // Clear interval
+      clearInterval(intervalId);
     };
   }, []);
   
