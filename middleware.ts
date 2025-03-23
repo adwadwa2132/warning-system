@@ -62,8 +62,12 @@ export const config = {
 
 // Middleware function to protect admin routes
 export function middleware(request: NextRequest) {
-  // Only run on admin routes
-  if (request.nextUrl.pathname.startsWith('/admin')) {
+  // Get the pathname from the URL
+  const pathname = request.nextUrl.pathname;
+  
+  // Very explicit check to ensure we're ONLY matching /admin paths
+  // This will NOT match other paths
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
     const username = process.env.ADMIN_USERNAME;
     const password = process.env.ADMIN_PASSWORD;
     
@@ -98,11 +102,16 @@ export function middleware(request: NextRequest) {
     return response;
   }
   
-  // Not an admin route, proceed normally
+  // Not an admin route, proceed normally without authentication
   return NextResponse.next();
 }
 
-// Configure middleware to run only for admin routes
+// Configure middleware to run ONLY on admin routes
+// This limits when the middleware function is called
 export const config = {
-  matcher: ['/admin', '/admin/:path*'],
+  matcher: [
+    // Match only /admin and /admin/... paths
+    '/admin',
+    '/admin/:path*'
+  ],
 }; 

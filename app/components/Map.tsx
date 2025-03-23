@@ -46,6 +46,15 @@ export default function Map({
   selectedWarningId,
   radarType = "rainviewer"
 }) {
+  // Debug warnings data
+  useEffect(() => {
+    console.log("Warnings received in Map component:", warnings);
+    if (warnings && warnings.length > 0) {
+      console.log("First warning details:", warnings[0]);
+      console.log("First warning polygon:", warnings[0].polygon);
+    }
+  }, [warnings]);
+  
   // State variables
   const [map, setMap] = useState(null);
   const [selectedWarning, setSelectedWarning] = useState(null);
@@ -254,15 +263,73 @@ export default function Map({
   };
   
   // Convert warning polygon data to Leaflet format
-  const formatPolygonData = (polygonData) => {
-    if (!polygonData || !Array.isArray(polygonData)) {
-      console.warn("Warning is missing polygon data:", polygonData);
+  const formatPolygonData = (polygonData): L.LatLngTuple[] => {
+    if (!polygonData) {
+      console.warn("Warning is missing polygon data");
       return [];
     }
     
     try {
-      // Ensure we have valid data
-      return polygonData.map(point => [point[0], point[1]]);
+      console.log("Raw polygon data:", JSON.stringify(polygonData).substring(0, 100));
+      
+      // Handle different possible polygon formats
+      
+      // Case 1: Direct array of coordinate pairs
+      if (Array.isArray(polygonData) && polygonData.length > 0 && Array.isArray(polygonData[0])) {
+        // Check if the coordinates are in the correct format [lat, lng]
+        if (typeof polygonData[0][0] === 'number' && typeof polygonData[0][1] === 'number') {
+          console.log("Using direct array of coordinate pairs format");
+          // Ensure each coordinate is a valid LatLngTuple (exactly 2 elements)
+          return polygonData.map(coord => 
+            Array.isArray(coord) && coord.length >= 2 
+              ? [coord[0], coord[1]] as L.LatLngTuple 
+              : [0, 0] as L.LatLngTuple
+          );
+        }
+      }
+      
+      // Case 2: GeoJSON format - most likely format from MongoDB
+      if (typeof polygonData === 'object' && polygonData !== null) {
+        // Standard GeoJSON polygon
+        if (polygonData.type === 'Polygon' && Array.isArray(polygonData.coordinates)) {
+          console.log("Using GeoJSON Polygon format");
+          // Convert from [lng, lat] to [lat, lng] format for Leaflet
+          return polygonData.coordinates[0].map(coord => 
+            Array.isArray(coord) && coord.length >= 2 
+              ? [coord[1], coord[0]] as L.LatLngTuple 
+              : [0, 0] as L.LatLngTuple
+          );
+        }
+        
+        // Just the coordinates array from a GeoJSON
+        if (Array.isArray(polygonData.coordinates)) {
+          console.log("Using object with coordinates property");
+          // Check if it's a nested array of coordinates
+          if (Array.isArray(polygonData.coordinates[0]) && 
+              Array.isArray(polygonData.coordinates[0][0])) {
+            // Convert from [lng, lat] to [lat, lng] format for Leaflet
+            return polygonData.coordinates[0].map(coord => 
+              Array.isArray(coord) && coord.length >= 2 
+                ? [coord[1], coord[0]] as L.LatLngTuple 
+                : [0, 0] as L.LatLngTuple
+            );
+          }
+          
+          // Single ring of coordinates
+          if (Array.isArray(polygonData.coordinates[0]) && 
+              typeof polygonData.coordinates[0][0] === 'number') {
+            // Convert from [lng, lat] to [lat, lng] format for Leaflet
+            return polygonData.coordinates.map(coord => 
+              Array.isArray(coord) && coord.length >= 2 
+                ? [coord[1], coord[0]] as L.LatLngTuple 
+                : [0, 0] as L.LatLngTuple
+            );
+          }
+        }
+      }
+      
+      console.warn("Unrecognized polygon data format:", typeof polygonData);
+      return [];
     } catch (error) {
       console.error("Error formatting polygon data:", error);
       return [];
