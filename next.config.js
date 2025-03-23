@@ -33,9 +33,13 @@ const nextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname),
-      'leaflet-draw': require.resolve('leaflet-draw'),
-      'leaflet': require.resolve('leaflet'),
     };
+    
+    // Handle CSS externally - don't bundle CSS
+    config.module.rules.push({
+      test: /\.(css)$/,
+      use: ['ignore-loader'],
+    });
     
     return config;
   },

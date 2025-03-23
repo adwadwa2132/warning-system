@@ -2,10 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Polygon, useMap, LayersControl, ZoomControl, Popup } from 'react-leaflet';
 import 'leaflet-draw';
-import 'leaflet-draw/dist/leaflet.draw.css';
 import React from 'react';
 
 // Fix for the Leaflet icon issue
