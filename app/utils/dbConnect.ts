@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/warning-system';
+const MONGODB_URI = process.env.MONGODB_URI || '';
 
 if (!MONGODB_URI) {
   throw new Error(
@@ -13,20 +13,10 @@ if (!MONGODB_URI) {
  * in development. This prevents connections growing exponentially
  * during API Route usage.
  */
-// Define types for the global mongoose cache
-interface MongooseCache {
-  conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
-}
+let cached = global.mongoose;
 
-declare global {
-  var mongoose: MongooseCache | undefined;
-}
-
-let cached: MongooseCache = global.mongoose || { conn: null, promise: null };
-
-if (!global.mongoose) {
-  global.mongoose = cached;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
 }
 
 async function dbConnect() {

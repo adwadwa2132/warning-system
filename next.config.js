@@ -20,10 +20,20 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+
+  // Ensure we can handle Tailwind CSS
+  postcss: true,
   
   // Configure webpack to handle SVG files and path aliases
   webpack: (config) => {
-    // Handle CSS imports
+    // Handle all CSS imports (not just ones from node_modules)
+    config.module.rules.push({
+      test: /\.css$/,
+      use: ['style-loader', 'css-loader', 'postcss-loader'],
+      // No include filter to apply to all CSS files
+    });
+
+    // Handle CSS imports from specific modules
     config.module.rules.push({
       test: /\.css$/,
       use: ['style-loader', 'css-loader'],
@@ -38,7 +48,9 @@ const nextConfig = {
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack', 'url-loader'],
-      include: [/node_modules\/leaflet-draw/],
+      include: [
+        /node_modules\/leaflet-draw/,
+      ],
     });
 
     // Add support for image files in leaflet-draw
@@ -82,6 +94,13 @@ const nextConfig = {
         },
       },
     });
+
+    // Add fallbacks for node polyfills
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      path: false,
+    };
 
     return config;
   },

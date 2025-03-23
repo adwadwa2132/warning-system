@@ -1,7 +1,5 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
-import 'leaflet/dist/leaflet.css';
-// We'll handle Leaflet Draw CSS directly in Map.tsx component to avoid build issues
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Leaflet CSS is imported directly in the components that need it */}
+        {/* Leaflet CSS will be included via inline styles in the Map component */}
       </head>
       <body className={inter.className}>
         <main className="min-h-screen bg-gray-50">
