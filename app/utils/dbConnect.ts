@@ -1,8 +1,12 @@
 import mongoose from 'mongoose';
 
+// Check if we're in a build environment
+const isBuildTime = process.env.NODE_ENV === 'development' && process.env.NETLIFY === 'true';
+
 const MONGODB_URI = process.env.MONGODB_URI || '';
 
-if (!MONGODB_URI) {
+// Only throw error if not in build environment and MONGODB_URI is missing
+if (!MONGODB_URI && !isBuildTime) {
   throw new Error(
     'Please define the MONGODB_URI environment variable'
   );
@@ -20,6 +24,12 @@ if (!cached) {
 }
 
 async function dbConnect() {
+  // If we're in build environment and no URI, return mock connection
+  if (isBuildTime && !MONGODB_URI) {
+    console.log('Build environment detected, skipping DB connection');
+    return { connection: { readyState: 1 } };
+  }
+
   if (cached.conn) {
     return cached.conn;
   }

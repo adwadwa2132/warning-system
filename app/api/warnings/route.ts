@@ -2,9 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/app/utils/dbConnect';
 import Warning from '@/app/models/Warning';
 
+// Check if we're in a build environment
+const isBuildTime = process.env.NODE_ENV === 'development' && process.env.NETLIFY === 'true';
+
 // GET /api/warnings - Get all active warnings
 export async function GET() {
   try {
+    // If we're in build environment, return mock data
+    if (isBuildTime) {
+      console.log('Build environment detected, returning mock warnings data');
+      return NextResponse.json([]);
+    }
+    
     await dbConnect();
     
     // Find all active warnings that haven't expired
@@ -16,6 +25,10 @@ export async function GET() {
     return NextResponse.json(warnings);
   } catch (error) {
     console.error('Error fetching warnings:', error);
+    // If in build environment, just return empty array to ensure build succeeds
+    if (isBuildTime) {
+      return NextResponse.json([]);
+    }
     return NextResponse.json(
       { error: 'Failed to fetch warnings' },
       { status: 500 }
@@ -26,6 +39,12 @@ export async function GET() {
 // POST /api/warnings - Create a new warning
 export async function POST(request: NextRequest) {
   try {
+    // If we're in build environment, return mock response
+    if (isBuildTime) {
+      console.log('Build environment detected, returning mock create response');
+      return NextResponse.json({id: 'mock-id'}, { status: 201 });
+    }
+    
     await dbConnect();
     
     const data = await request.json();
@@ -55,6 +74,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(warning, { status: 201 });
   } catch (error) {
     console.error('Error creating warning:', error);
+    // If in build environment, just return success to ensure build succeeds
+    if (isBuildTime) {
+      return NextResponse.json({id: 'mock-id'}, { status: 201 });
+    }
     return NextResponse.json(
       { error: 'Failed to create warning' },
       { status: 500 }

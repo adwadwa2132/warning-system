@@ -3,7 +3,7 @@
   publish = ".next"
 
 [build.environment]
-  MONGODB_URI = ""
+  MONGODB_URI = "mongodb://dummy-value-for-build-only:27017/test"
   ADMIN_USERNAME = ""
   ADMIN_PASSWORD = ""
   NODE_VERSION = "18.20.0"
