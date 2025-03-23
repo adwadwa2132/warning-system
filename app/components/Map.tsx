@@ -124,68 +124,54 @@ export default function Map({
     // Add the editable layers to the map if in edit mode
     if (editMode) {
       editableLayers.current.addTo(mapInstance);
-    }
-  }, [editMode]);
-  
-  // Initialize draw controls when map is ready and in edit mode
-  useEffect(() => {
-    if (!map || !editMode) return;
-    
-    console.log("Initializing draw controls");
-    
-    // Create the draw control
-    const drawControlOptions = {
-      position: 'topright',
-      draw: {
-        polyline: false,
-        circle: false,
-        circlemarker: false,
-        rectangle: false,
-        marker: false,
-        polygon: {
-          allowIntersection: false,
-          drawError: {
-            color: '#e1e100',
-            message: 'Polygons cannot intersect!'
+      
+      // Initialize draw controls immediately after map creation
+      try {
+        // Create the draw control
+        const drawControlOptions = {
+          position: 'topright',
+          draw: {
+            polyline: false,
+            circle: false,
+            circlemarker: false,
+            rectangle: false,
+            marker: false,
+            polygon: {
+              allowIntersection: false,
+              drawError: {
+                color: '#e1e100',
+                message: 'Polygons cannot intersect!'
+              },
+              shapeOptions: {
+                color: '#3388ff',
+                weight: 2
+              }
+            }
           },
-          shapeOptions: {
-            color: '#3388ff',
-            weight: 2
+          edit: {
+            featureGroup: editableLayers.current,
+            remove: true
           }
-        }
-      },
-      edit: {
-        featureGroup: editableLayers.current,
-        remove: true
+        };
+        
+        // @ts-ignore
+        const control = new L.Control.Draw(drawControlOptions);
+        mapInstance.addControl(control);
+        setDrawControl(control);
+        
+        console.log("Draw control added to map directly");
+        
+        // Setup event handlers for draw/edit events
+        mapInstance.on(L.Draw.Event.CREATED, event => handlePolygonCreated(event));
+        mapInstance.on(L.Draw.Event.EDITED, event => handlePolygonEdited(event));
+        mapInstance.on(L.Draw.Event.DELETED, event => handlePolygonDeleted(event));
+      } catch (error) {
+        console.error("Error setting up draw controls during map creation:", error);
       }
-    };
-    
-    try {
-      // Create the draw control
-      // @ts-ignore
-      const control = new L.Control.Draw(drawControlOptions);
-      map.addControl(control);
-      setDrawControl(control);
-      
-      console.log("Draw control added to map");
-      
-      // Setup event handlers for draw/edit events
-      map.on(L.Draw.Event.CREATED, handlePolygonCreated);
-      map.on(L.Draw.Event.EDITED, handlePolygonEdited);
-      map.on(L.Draw.Event.DELETED, handlePolygonDeleted);
-      
-      return () => {
-        map.off(L.Draw.Event.CREATED, handlePolygonCreated);
-        map.off(L.Draw.Event.EDITED, handlePolygonEdited);
-        map.off(L.Draw.Event.DELETED, handlePolygonDeleted);
-        if (control) {
-          map.removeControl(control);
-        }
-      };
-    } catch (error) {
-      console.error("Error setting up draw controls:", error);
     }
-  }, [map, editMode, onPolygonCreated, onPolygonEdited]);
+    
+    // Initialize radar immediately - we'll do this in a useEffect instead
+  }, [editMode]);
   
   // Handle different radar types
   useEffect(() => {
@@ -479,10 +465,14 @@ export default function Map({
       <FixLeafletIcons />
       
       <MapContainer
-        center={center}
+        center={center as [number, number]}
         zoom={zoom}
         style={{ height: '100%', width: '100%' }}
-        whenCreated={onMapCreated}
+        ref={map => {
+          if (map) {
+            onMapCreated(map);
+          }
+        }}
         zoomControl={false}
       >
         <MapDebugger />

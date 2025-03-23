@@ -1,9 +1,14 @@
 import './globals.css';
-import LeafletDrawStyles from './components/LeafletDrawStyles';
+import 'leaflet/dist/leaflet.css';
+import './styles/leaflet-draw.css';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 
-export const metadata = {
-  title: 'Warning System',
-  description: 'A system for managing and displaying weather warnings',
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'Weather Warning System',
+  description: 'Custom severe weather warning system',
 };
 
 export default function RootLayout({
@@ -13,23 +18,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link 
-          rel="stylesheet" 
-          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-          crossOrigin=""
-        />
-        <link 
-          rel="stylesheet" 
-          href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"
-        />
-      </head>
-      <body className="bg-gray-100">
-        <LeafletDrawStyles />
-        {children}
+      <body className={inter.className}>
+        <main className="min-h-screen bg-gray-50">
+          {children}
+        </main>
       </body>
     </html>
   );
