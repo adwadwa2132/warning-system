@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import Head from 'next/head';
 
 // We need to dynamically import the Map component because Leaflet 
 // requires window to be defined (which doesn't exist during SSR)
@@ -160,9 +159,6 @@ export default function AdminPage() {
 
   return (
     <div className="container mx-auto p-2 sm:p-4">
-      <Head>
-        <title>Warning System - Admin Panel</title>
-      </Head>
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Warning System - Admin Panel</h1>
       
       <div className="mb-4 flex justify-end">
