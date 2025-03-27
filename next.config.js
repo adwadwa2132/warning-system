@@ -10,10 +10,12 @@ const nextConfig = {
   // Set the output directory for Netlify
   distDir: '.next',
   
+  // Configure output for optimization
+  output: 'export', // Static HTML export
+  
   // Allow images from external domains
   images: {
-    domains: ['openweathermap.org'],
-    unoptimized: true,
+    unoptimized: true, // Required for static export
   },
   
   // Disable ESLint
@@ -21,32 +23,12 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   
-  // Configure webpack to handle SVG files and path aliases
+  // Simply configure webpack with minimal settings
   webpack: (config) => {
-    // Add support for SVG files
-    config.module.rules.push({
-      test: /\.svg$/,
-      use: ['@svgr/webpack'],
-    });
-
-    // Add support for all image files
-    config.module.rules.push({
-      test: /\.(png|jpe?g|gif)$/i,
-      use: [{
-        loader: 'file-loader',
-        options: {
-          publicPath: '/_next',
-          name: 'static/media/[name].[hash].[ext]',
-        },
-      }],
-    });
-
     // Resolve path aliases
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname),
-      'leaflet': require.resolve('leaflet'),
-      'leaflet-draw': require.resolve('leaflet-draw'),
     };
 
     // Add fallbacks for node polyfills
@@ -59,11 +41,14 @@ const nextConfig = {
     return config;
   },
   
-  // External modules that should be transpiled
-  transpilePackages: ['react-leaflet', '@react-leaflet', 'leaflet', 'leaflet-draw', 'react-datepicker'],
-  
-  // Set strict mode to false to avoid double mounting during development
+  // Disable React strict mode to prevent double mounting
   reactStrictMode: false,
+  
+  // Enable concurrent features for better performance
+  experimental: {
+    optimizeCss: true, // Optimize CSS
+    optimizePackageImports: ['react-leaflet', 'leaflet'], // Optimize imports
+  }
 };
 
 module.exports = nextConfig;

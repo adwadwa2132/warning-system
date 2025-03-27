@@ -1,6 +1,6 @@
 [build]
-  command = "rm -rf node_modules package-lock.json && npm install --legacy-peer-deps && NEXT_PUBLIC_SKIP_TYPE_CHECK=true npm run build"
-  publish = ".next"
+  command = "rm -rf node_modules .next package-lock.json && npm install --no-optional --legacy-peer-deps && NEXT_PUBLIC_SKIP_TYPE_CHECK=true NODE_OPTIONS=--max_old_space_size=4096 npm run build"
+  publish = "out"
 
 [build.environment]
   MONGODB_URI = "mongodb://dummy-value-for-build-only:27017/test"
@@ -12,9 +12,11 @@
   NEXT_TELEMETRY_DISABLED = "1"
   # Skip Netlify Next.js plugin
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
+  # Optimize memory usage during build
+  NODE_OPTIONS = "--max_old_space_size=4096"
 
 [[headers]]
-  for = "/_next/static/*"
+  for = "/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
