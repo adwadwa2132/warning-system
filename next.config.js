@@ -7,8 +7,8 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   
-  // Enable static exports 
-  output: 'standalone',
+  // Set the output directory for Netlify
+  distDir: '.next',
   
   // Allow images from external domains
   images: {
@@ -47,25 +47,7 @@ const nextConfig = {
       '@': path.resolve(__dirname),
       'leaflet': require.resolve('leaflet'),
       'leaflet-draw': require.resolve('leaflet-draw'),
-      'ajv/dist/compile/codegen': path.resolve(__dirname, 'node_modules/ajv/dist/compile/codegen'),
     };
-
-    // Explicitly transpile packages
-    config.module.rules.push({
-      test: /\.js$/,
-      include: [
-        /node_modules\/leaflet/,
-        /node_modules\/leaflet-draw/,
-        /node_modules\/@react-leaflet/,
-        /node_modules\/react-leaflet/,
-      ],
-      use: {
-        loader: 'babel-loader',
-        options: {
-          presets: ['next/babel'],
-        },
-      },
-    });
 
     // Add fallbacks for node polyfills
     config.resolve.fallback = {
@@ -78,7 +60,10 @@ const nextConfig = {
   },
   
   // External modules that should be transpiled
-  transpilePackages: ['react-leaflet', '@react-leaflet', 'leaflet', 'leaflet-draw', 'react-datepicker', 'ajv', 'ajv-keywords'],
+  transpilePackages: ['react-leaflet', '@react-leaflet', 'leaflet', 'leaflet-draw', 'react-datepicker'],
+  
+  // Set strict mode to false to avoid double mounting during development
+  reactStrictMode: false,
 };
 
 module.exports = nextConfig;

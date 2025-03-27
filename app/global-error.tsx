@@ -18,22 +18,18 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">500 - Server Error</h1>
-          <p className="text-lg text-gray-600 mb-6">Sorry, something went wrong on our server.</p>
-          <button
-            onClick={() => reset()}
-            className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition-colors"
-          >
-            Try again
-          </button>
-          <a href="/" className="mt-4 text-blue-600 hover:underline">
-            Return to Home
-          </a>
-        </div>
-      </body>
-    </html>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+      <h1 className="text-4xl font-bold text-gray-800 mb-4">500 - Server Error</h1>
+      <p className="text-lg text-gray-600 mb-6">Sorry, something went wrong on our server.</p>
+      <button
+        onClick={() => reset()}
+        className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition-colors"
+      >
+        Try again
+      </button>
+      <a href="/" className="mt-4 text-blue-600 hover:underline">
+        Return to Home
+      </a>
+    </div>
   );
 } 
