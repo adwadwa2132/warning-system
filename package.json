@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3002",
-    "build": "next build",
+    "build": "NEXT_SKIP_SWC=1 next build",
+    "export": "next export",
     "start": "next start",
     "lint": "next lint"
   },

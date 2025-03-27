@@ -23,6 +23,9 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   
+  // Disable SWC compiler which is causing hangs
+  swcMinify: false,
+  
   // Simply configure webpack with minimal settings
   webpack: (config) => {
     // Resolve path aliases
@@ -44,10 +47,9 @@ const nextConfig = {
   // Disable React strict mode to prevent double mounting
   reactStrictMode: false,
   
-  // Enable concurrent features for better performance
+  // Simplify experimental features to avoid compilation issues
   experimental: {
-    optimizeCss: true, // Optimize CSS
-    optimizePackageImports: ['react-leaflet', 'leaflet'], // Optimize imports
+    optimizeCss: false, // Disable CSS optimization as it can cause issues
   }
 };
 

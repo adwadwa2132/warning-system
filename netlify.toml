@@ -1,5 +1,5 @@
 [build]
-  command = "rm -rf node_modules .next package-lock.json && npm install --no-optional --legacy-peer-deps && NEXT_PUBLIC_SKIP_TYPE_CHECK=true NODE_OPTIONS=--max_old_space_size=4096 npm run build"
+  command = "rm -rf node_modules .next out package-lock.json && npm install --no-optional --legacy-peer-deps && NEXT_TELEMETRY_DISABLED=1 NEXT_SKIP_TYPECHECKING=true NODE_OPTIONS='--max_old_space_size=4096 --no-compilation-cache' npm run build"
   publish = "out"
 
 [build.environment]
@@ -8,12 +8,14 @@
   ADMIN_PASSWORD = "password"
   NEXT_PUBLIC_ADMIN_USERNAME = "admin"
   NEXT_PUBLIC_ADMIN_PASSWORD = "password"
-  NODE_VERSION = "18.20.0"
+  NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
-  # Skip Netlify Next.js plugin
+  # Turn off Next.js plugin to avoid SWC issues
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
   # Optimize memory usage during build
-  NODE_OPTIONS = "--max_old_space_size=4096"
+  NODE_OPTIONS = "--max_old_space_size=4096 --no-compilation-cache"
+  # Skip SWC and use Babel instead
+  NEXT_SKIP_SWC = "1"
 
 [[headers]]
   for = "/static/*"
