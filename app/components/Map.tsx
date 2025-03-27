@@ -1,10 +1,33 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Polygon, useMap, LayersControl, ZoomControl, Popup } from 'react-leaflet';
 
-// Skip direct CSS imports and handle them through webpack config
+// Define types for our component props
+interface Warning {
+  _id: string;
+  title: string;
+  severity: string;
+  context: string;
+  color: string;
+  expiresAt: string;
+  polygon: any; // We'll handle the polygon type in the formatPolygonData function
+}
+
+interface MapProps {
+  warnings?: Warning[];
+  center?: [number, number];
+  zoom?: number;
+  showRadar?: boolean;
+  onPolygonCreated?: (polygon: any) => void;
+  onPolygonEdited?: (polygon: any) => void;
+  setRadarControls?: (controls: any) => void;
+  editMode?: boolean;
+  onWarningClick?: (warning: Warning) => void;
+  selectedWarningId?: string;
+  radarType?: 'rainviewer' | 'mrms';
+}
 
 // We need to manually fix Leaflet icon paths on client side
 if (typeof window !== 'undefined') {
@@ -20,22 +43,9 @@ if (typeof window !== 'undefined') {
       iconUrl: '/leaflet/marker-icon.png',
       shadowUrl: '/leaflet/marker-shadow.png',
     });
-    
-    console.log("Leaflet Draw loaded and icons fixed");
   } catch (e) {
     console.error("Failed to initialize Leaflet:", e);
   }
-}
-
-// Console logging component to debug map mounting
-function MapDebugger() {
-  const map = useMap();
-  
-  useEffect(() => {
-    console.log("Map component successfully mounted", map);
-  }, [map]);
-  
-  return null;
 }
 
 // Add radar product selection UI component
@@ -100,189 +110,132 @@ export default function Map({
   onWarningClick,
   selectedWarningId,
   radarType = "rainviewer"
-}) {
-  // State variables
-  const [map, setMap] = useState(null);
-  const [selectedWarning, setSelectedWarning] = useState(null);
-  const [radarData, setRadarData] = useState(null);
-  const [currentTimestamp, setCurrentTimestamp] = useState(0);
-  const [radarLayer, setRadarLayer] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState('reflectivity');
-  const drawControlRef = useRef(null);
-  const [drawControl, setDrawControl] = useState(null);
-  const editableLayers = useRef(new L.FeatureGroup());
-  const mapRef = useRef(null);
+}: MapProps) {
+  // State variables with proper types
+  const [map, setMap] = useState<L.Map | null>(null);
+  const [selectedWarning, setSelectedWarning] = useState<Warning | null>(null);
+  const [radarData, setRadarData] = useState<any>(null);
+  const [currentTimestamp, setCurrentTimestamp] = useState<number>(0);
+  const [radarLayer, setRadarLayer] = useState<L.Layer | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [currentProduct, setCurrentProduct] = useState<string>('reflectivity');
+  const editableLayers = useRef<L.FeatureGroup>(new L.FeatureGroup());
   
-  // Expose map instance globally to help custom scripts find it
-  useEffect(() => {
-    if (mapRef.current) {
-      console.log("Exposing map instance globally");
-      
-      // Use type assertion to add properties to window
-      (window as any)._leafletMap = mapRef.current;
-      
-      // Expose helper for external scripts to force draw mode
-      (window as any)._startDrawingPolygon = () => {
-        try {
-          if (!mapRef.current) return false;
-          
-          console.log("External drawing request received");
-          if ((L as any).Draw && (L as any).Draw.Polygon) {
-            const handler = new ((L as any).Draw.Polygon)(mapRef.current, {
-              shapeOptions: { color: '#f00' }
-            });
-            handler.enable();
-            console.log("Drawing polygon through exposed helper");
-            return true;
-          }
-          return false;
-        } catch (err) {
-          console.error("Error in global drawing helper:", err);
-          return false;
-        }
-      };
-    }
+  // Map initialization component
+  function MapInitializer() {
+    const map = useMap();
     
-    return () => {
-      // Clean up global references when component unmounts
-      delete (window as any)._leafletMap;
-      delete (window as any)._startDrawingPolygon;
-    };
-  }, [mapRef.current]);
-  
-  // Debug warnings data
-  useEffect(() => {
-    console.log("Warnings received in Map component:", warnings);
-    if (warnings && warnings.length > 0) {
-      console.log("First warning details:", warnings[0]);
-      console.log("First warning polygon:", warnings[0].polygon);
-    }
-  }, [warnings]);
-  
-  // Define custom type for Leaflet Draw
-  type LeafletWithDraw = typeof L & {
-    Draw: {
-      Event: {
-        CREATED: string;
-        EDITED: string;
-        DELETED: string;
-      };
-      Control: any;
-    };
-    Control: {
-      Draw: any;
-    } & typeof L.Control;
-  };
-
-  // Cast L to our custom type that includes Draw
-  const LeafletWithDrawing = L as LeafletWithDraw;
-  
-  // Initialize map when it's ready
-  useEffect(() => {
-    const currentMap = mapRef.current;
-    if (!currentMap) return;
-    
-    console.log("Map instance created", currentMap);
-    setMap(currentMap);
-    
-    // Add the editable layers to the map if in edit mode
-    if (editMode) {
-      console.log("Edit mode is enabled");
+    useEffect(() => {
+      console.log("Map instance created");
+      setMap(map);
       
-      // Create editable layer and add to map
-      const editableLayer = new L.FeatureGroup();
-      editableLayers.current = editableLayer;
-      currentMap.addLayer(editableLayer);
-      
-      // Create the draw control
-      const drawControl = new (L as any).Control.Draw({
-        position: 'topright',
-        draw: {
-          polyline: false,
-          rectangle: false,
-          circle: false,
-          circlemarker: false,
-          marker: false,
-          polygon: {
-            allowIntersection: false,
-            showArea: true,
-            drawError: {
-              color: '#e1e100',
-              message: '<strong>Error:</strong> Polygon edges cannot cross!'
-            },
-            shapeOptions: {
-              color: '#ff0000',
-              fillOpacity: 0.2
+      // Setup drawing functionality if in edit mode
+      if (editMode) {
+        console.log("Edit mode is enabled");
+        
+        // Create editable layer and add to map
+        const editableLayer = new L.FeatureGroup();
+        editableLayers.current = editableLayer;
+        map.addLayer(editableLayer);
+        
+        // Create the draw control with options that work well
+        const drawControl = new (L as any).Control.Draw({
+          position: 'topright',
+          draw: {
+            polyline: false,
+            rectangle: false,
+            circle: false,
+            circlemarker: false,
+            marker: false,
+            polygon: {
+              allowIntersection: false,
+              showArea: true,
+              drawError: {
+                color: '#e1e100',
+                message: '<strong>Error:</strong> Polygon edges cannot cross!'
+              },
+              shapeOptions: {
+                color: '#ff0000',
+                fillOpacity: 0.2
+              }
             }
+          },
+          edit: {
+            featureGroup: editableLayer,
+            remove: true
           }
-        },
-        edit: {
-          featureGroup: editableLayer,
-          remove: true
-        }
-      });
-      
-      // Add draw control to map
-      currentMap.addControl(drawControl);
-      setDrawControl(drawControl);
-      console.log("Draw control added to map");
-      
-      // Add event handlers
-      currentMap.on('draw:created', function(e: any) {
-        console.log("Polygon created event", e);
-        const layer = e.layer;
-        
-        // Add the layer to our editable layer
-        editableLayer.addLayer(layer);
-        
-        // Get the polygon coordinates
-        const polygonCoordinates = layer.getLatLngs()[0].map((point: any) => {
-          return [point.lat, point.lng];
         });
         
-        // Close the polygon by adding the first point at the end
-        polygonCoordinates.push(polygonCoordinates[0]);
+        // Add draw control to map
+        map.addControl(drawControl);
         
-        // Format how the app expects it
-        const formattedPolygon = [polygonCoordinates];
-        
-        if (onPolygonCreated) {
-          onPolygonCreated(formattedPolygon);
-        }
-      });
-      
-      currentMap.on('draw:edited', function(e: any) {
-        console.log("Polygon edited event", e);
-        const layers = e.layers;
-        
-        // Extract all polygons
-        const editedPolygon: any = [];
-        layers.eachLayer(function(layer: any) {
+        // Add event handlers for drawing
+        map.on('draw:created', function(e: any) {
+          console.log("Polygon created event");
+          const layer = e.layer;
+          
+          // Add the layer to our editable layer
+          editableLayer.addLayer(layer);
+          
+          // Get the polygon coordinates
           const polygonCoordinates = layer.getLatLngs()[0].map((point: any) => {
-            return [point.lat, point.lng];
+            return [point.lng, point.lat]; // GeoJSON uses [longitude, latitude] format
           });
           
-          // Close the polygon
-          polygonCoordinates.push(polygonCoordinates[0]);
-          editedPolygon.push(polygonCoordinates);
+          // Close the polygon by adding the first point at the end
+          if (polygonCoordinates.length > 0 && 
+              (polygonCoordinates[0][0] !== polygonCoordinates[polygonCoordinates.length - 1][0] || 
+               polygonCoordinates[0][1] !== polygonCoordinates[polygonCoordinates.length - 1][1])) {
+            polygonCoordinates.push([...polygonCoordinates[0]]);
+          }
+          
+          // Format how the app expects it
+          const formattedPolygon = [polygonCoordinates];
+          
+          if (onPolygonCreated) {
+            onPolygonCreated(formattedPolygon);
+          }
         });
         
-        if (onPolygonEdited && editedPolygon.length > 0) {
-          onPolygonEdited(editedPolygon);
-        }
-      });
-      
-      // Clean up event handlers on unmount
-      return () => {
-        currentMap.off('draw:created');
-        currentMap.off('draw:edited');
-        if (drawControl) {
-          currentMap.removeControl(drawControl);
-        }
-      };
-    }
-  }, [editMode, onPolygonCreated, onPolygonEdited]);
+        map.on('draw:edited', function(e: any) {
+          console.log("Polygon edited event");
+          const layers = e.layers;
+          
+          // Extract all polygons
+          const editedPolygon: any = [];
+          layers.eachLayer(function(layer: any) {
+            const polygonCoordinates = layer.getLatLngs()[0].map((point: any) => {
+              return [point.lng, point.lat]; // GeoJSON uses [longitude, latitude] format
+            });
+            
+            // Close the polygon
+            if (polygonCoordinates.length > 0 && 
+                (polygonCoordinates[0][0] !== polygonCoordinates[polygonCoordinates.length - 1][0] || 
+                polygonCoordinates[0][1] !== polygonCoordinates[polygonCoordinates.length - 1][1])) {
+              polygonCoordinates.push([...polygonCoordinates[0]]);
+            }
+            
+            editedPolygon.push(polygonCoordinates);
+          });
+          
+          if (onPolygonEdited && editedPolygon.length > 0) {
+            onPolygonEdited(editedPolygon);
+          }
+        });
+        
+        // Clean up event handlers on unmount
+        return () => {
+          map.off('draw:created');
+          map.off('draw:edited');
+          if (drawControl) {
+            map.removeControl(drawControl);
+          }
+        };
+      }
+    }, [editMode, onPolygonCreated, onPolygonEdited]);
+    
+    return null;
+  }
   
   // Handle different radar types
   useEffect(() => {
@@ -303,7 +256,6 @@ export default function Map({
       setIsLoading(true);
       const response = await fetch('https://api.rainviewer.com/public/weather-maps.json');
       const data = await response.json();
-      console.log("Radar data successfully fetched", data);
       setRadarData(data);
       
       // Display latest frame
@@ -417,7 +369,7 @@ export default function Map({
   }, [setRadarControls, currentTimestamp, currentProduct, radarType]);
   
   // Handle warning clicks
-  const handleWarningClick = (warning) => {
+  const handleWarningClick = (warning: Warning) => {
     setSelectedWarning(warning);
     if (onWarningClick) {
       onWarningClick(warning);
@@ -425,22 +377,19 @@ export default function Map({
   };
   
   // Convert warning polygon data to Leaflet format
-  const formatPolygonData = (polygonData): L.LatLngTuple[] => {
+  const formatPolygonData = (polygonData: any): L.LatLngTuple[] => {
     if (!polygonData) {
       console.warn("Warning is missing polygon data");
       return [];
     }
     
     try {
-      console.log("Raw polygon data:", JSON.stringify(polygonData).substring(0, 100));
-      
       // Handle different possible polygon formats
       
       // Case 1: Direct array of coordinate pairs
       if (Array.isArray(polygonData) && polygonData.length > 0 && Array.isArray(polygonData[0])) {
         // Check if the coordinates are in the correct format [lat, lng]
         if (typeof polygonData[0][0] === 'number' && typeof polygonData[0][1] === 'number') {
-          console.log("Using direct array of coordinate pairs format");
           // Ensure each coordinate is a valid LatLngTuple (exactly 2 elements)
           return polygonData.map(coord => 
             Array.isArray(coord) && coord.length >= 2 
@@ -454,7 +403,6 @@ export default function Map({
       if (typeof polygonData === 'object' && polygonData !== null) {
         // Standard GeoJSON polygon
         if (polygonData.type === 'Polygon' && Array.isArray(polygonData.coordinates)) {
-          console.log("Using GeoJSON Polygon format");
           // Convert from [lng, lat] to [lat, lng] format for Leaflet
           return polygonData.coordinates[0].map(coord => 
             Array.isArray(coord) && coord.length >= 2 
@@ -465,7 +413,6 @@ export default function Map({
         
         // Just the coordinates array from a GeoJSON
         if (Array.isArray(polygonData.coordinates)) {
-          console.log("Using object with coordinates property");
           // Check if it's a nested array of coordinates
           if (Array.isArray(polygonData.coordinates[0]) && 
               Array.isArray(polygonData.coordinates[0][0])) {
@@ -490,7 +437,7 @@ export default function Map({
         }
       }
       
-      console.warn("Unrecognized polygon data format:", typeof polygonData);
+      console.warn("Unrecognized polygon data format");
       return [];
     } catch (error) {
       console.error("Error formatting polygon data:", error);
@@ -499,70 +446,92 @@ export default function Map({
   };
   
   return (
-    <div style={{ height: '100%', width: '100%' }}>
-      <MapDebugger />
-      <ZoomControl position="bottomright" />
-      
-      <LayersControl position="bottomleft">
-        <LayersControl.BaseLayer name="OpenStreetMap" checked>
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-        </LayersControl.BaseLayer>
-        <LayersControl.BaseLayer name="Satellite">
-          <TileLayer
-            attribution='&copy; <a href="https://www.mapbox.com/">Mapbox</a>'
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          />
-        </LayersControl.BaseLayer>
-      </LayersControl>
-      
-      {/* Render warning polygons */}
-      {warnings && warnings.map((warning) => {
-        const polygon = formatPolygonData(warning.polygon);
-        if (polygon.length === 0) return null;
+    <div className="relative w-full h-full">
+      <MapContainer
+        center={center as L.LatLngTuple}
+        zoom={zoom}
+        style={{ height: '100%', width: '100%' }}
+        zoomControl={false}
+        attributionControl={true}
+        preferCanvas={true}
+      >
+        <MapInitializer />
+        <ZoomControl position="bottomright" />
         
-        return (
-          <Polygon
-            key={warning._id}
-            positions={polygon}
-            pathOptions={{
-              color: warning.color || '#3388ff',
-              weight: 2,
-              fillOpacity: 0.3,
-              opacity: 0.8,
-              fillColor: warning.color || '#3388ff'
-            }}
-            eventHandlers={{
-              click: () => handleWarningClick(warning),
-              mouseover: (e) => {
-                const layer = e.target;
-                layer.setStyle({
-                  weight: 4,
-                  fillOpacity: 0.5,
-                });
-              },
-              mouseout: (e) => {
-                const layer = e.target;
-                layer.setStyle({
-                  weight: 2,
-                  fillOpacity: 0.3,
-                });
-              }
-            }}
-          >
-            <Popup>
-              <div className="warning-popup">
-                <h3>{warning.title}</h3>
-                <p><strong>Severity:</strong> {warning.severity || 'Not specified'}</p>
-                <p><strong>Expires:</strong> {new Date(warning.expiresAt).toLocaleString()}</p>
-                <p>{warning.context}</p>
-              </div>
-            </Popup>
-          </Polygon>
-        );
-      })}
+        <LayersControl position="bottomleft">
+          <LayersControl.BaseLayer name="OpenStreetMap" checked>
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Satellite">
+            <TileLayer
+              attribution='&copy; <a href="https://www.mapbox.com/">Mapbox</a>'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl>
+        
+        {/* Render warning polygons */}
+        {warnings && warnings.map((warning: Warning) => {
+          const polygon = formatPolygonData(warning.polygon);
+          if (polygon.length === 0) return null;
+          
+          return (
+            <Polygon
+              key={warning._id}
+              positions={polygon}
+              pathOptions={{
+                color: warning.color || '#3388ff',
+                weight: 2,
+                fillOpacity: 0.3,
+                opacity: 0.8,
+                fillColor: warning.color || '#3388ff'
+              }}
+              eventHandlers={{
+                click: () => handleWarningClick(warning),
+                mouseover: (e) => {
+                  const layer = e.target;
+                  layer.setStyle({
+                    weight: 4,
+                    fillOpacity: 0.5,
+                  });
+                },
+                mouseout: (e) => {
+                  const layer = e.target;
+                  layer.setStyle({
+                    weight: 2,
+                    fillOpacity: 0.3,
+                  });
+                }
+              }}
+            >
+              <Popup>
+                <div className="warning-popup">
+                  <h3>{warning.title}</h3>
+                  <p><strong>Severity:</strong> {warning.severity || 'Not specified'}</p>
+                  <p><strong>Expires:</strong> {new Date(warning.expiresAt).toLocaleString()}</p>
+                  <p>{warning.context}</p>
+                </div>
+              </Popup>
+            </Polygon>
+          );
+        })}
+      </MapContainer>
+      
+      {/* Instructions for polygon drawing */}
+      {editMode && (
+        <div className="absolute bottom-4 left-4 bg-white p-3 rounded shadow-md z-50 max-w-sm">
+          <h3 className="font-bold text-sm mb-1">Drawing Instructions:</h3>
+          <ol className="text-xs list-decimal pl-4">
+            <li>Click the polygon icon in the top-right toolbar</li>
+            <li>Click on the map to add polygon vertices</li>
+            <li>Complete the polygon by clicking on the first point</li>
+            <li>Fill out the warning details in the form</li>
+          </ol>
+        </div>
+      )}
     </div>
   );
 } 

@@ -1,11 +1,17 @@
-import './globals.css';
+import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] });
+// Initialize the Inter font with proper configuration
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Warning System',
-  description: 'A system to display weather warnings on a map',
+  description: 'A map-based warning system for creating and displaying weather warnings',
 };
 
 export default function RootLayout({
@@ -14,11 +20,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <head>
-        {/* Leaflet CSS will be included via inline styles in the Map component */}
+        {/* Include Leaflet CSS */}
+        <link 
+          rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossOrigin=""
+        />
+        {/* Include Leaflet Draw CSS */}
+        <link 
+          rel="stylesheet"
+          href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"
+          crossOrigin=""
+        />
       </head>
-      <body className={inter.className}>
+      <body className="font-sans">
         <main className="min-h-screen bg-gray-50">
           {children}
         </main>

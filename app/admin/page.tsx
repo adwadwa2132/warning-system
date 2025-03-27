@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -24,6 +24,7 @@ export default function AdminPage() {
   const [message, setMessage] = useState({ text: '', type: '' });
   const [showRadar, setShowRadar] = useState(true);
   const [severityFilter, setSeverityFilter] = useState<string>('all');
+  const editableLayers = useRef(null);
   
   // Fetch warnings only once when the component loads
   useEffect(() => {
@@ -45,6 +46,7 @@ export default function AdminPage() {
   };
   
   const handlePolygonCreated = (newPolygon: number[][][]) => {
+    console.log("Polygon created:", newPolygon);
     setPolygon(newPolygon);
     setMessage({ text: 'Polygon created successfully! Fill out the form and publish.', type: 'success' });
   };
@@ -59,24 +61,34 @@ export default function AdminPage() {
     
     try {
       setLoading(true);
+      // Log the data we're sending to help debug
+      const warningData = {
+        title,
+        context,
+        polygon: polygon[0], // Send the first polygon in the array (the only one we should have)
+        color,
+        severity,
+        expiresAt: expiresAt.toISOString(),
+      };
+      
+      console.log("Submitting warning data:", warningData);
+      
       const response = await fetch('/api/warnings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title,
-          context,
-          polygon: polygon[0],
-          color,
-          severity,
-          expiresAt: expiresAt.toISOString(),
-        }),
+        body: JSON.stringify(warningData),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to create warning');
+        const errorData = await response.json();
+        console.error("API error:", errorData);
+        throw new Error(`Failed to create warning: ${errorData.error || response.statusText}`);
       }
+      
+      const result = await response.json();
+      console.log("API response:", result);
       
       // Reset form
       setTitle('');
@@ -86,12 +98,18 @@ export default function AdminPage() {
       setSeverity('medium');
       setExpiresAt(new Date(Date.now() + 24 * 60 * 60 * 1000));
       
+      // Clear any drawn polygons from the map
+      if (editableLayers && editableLayers.current) {
+        editableLayers.current.clearLayers();
+      }
+      
       setMessage({ text: 'Warning published successfully!', type: 'success' });
       
       // Refresh warnings list
       fetchWarnings();
     } catch (error) {
-      setMessage({ text: 'Failed to publish warning', type: 'error' });
+      console.error("Error:", error);
+      setMessage({ text: `Failed to publish warning: ${error.message}`, type: 'error' });
     } finally {
       setLoading(false);
     }

@@ -18,6 +18,9 @@ module.exports = {
         'high': '#F44336',
         'severe': '#9C27B0',
       },
+      fontFamily: {
+        sans: ['var(--font-inter)'],
+      },
     },
   },
   plugins: [],
