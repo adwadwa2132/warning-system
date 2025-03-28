@@ -64,6 +64,36 @@ cat > out/index.html << 'EOF'
       text-decoration: underline;
       margin: 0 10px;
     }
+    .error {
+      color: #d32f2f;
+      background-color: #ffebee;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 30px 0;
+      border: 1px solid #ffcdd2;
+    }
+    .form {
+      margin: 30px 0;
+      text-align: center;
+    }
+    .form input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 300px;
+      max-width: 100%;
+      font-size: 16px;
+    }
+    .form button {
+      background-color: #0070f3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
   </style>
 </head>
 <body>
@@ -71,28 +101,38 @@ cat > out/index.html << 'EOF'
   
   <div class="notice">
     <h2>This is a static placeholder page</h2>
-    <p>The Weather Warning System is available via the buttons below.</p>
+    <p>The main Weather Warning System is running on a different server.</p>
   </div>
   
-  <p>Click one of these buttons to access the Weather Warning System:</p>
-  
-  <div>
-    <a class="button" href="https://warningtest.oragewx.site" target="_blank" rel="noopener noreferrer">
-      Open Weather System (HTTPS)
-    </a>
-    
-    <a class="button" href="http://warningtest.oragewx.site" target="_blank" rel="noopener noreferrer">
-      Open Weather System (HTTP)
-    </a>
+  <div class="error">
+    <h3>Netlify Site Access</h3>
+    <p>You are currently accessing the Netlify host site, not the main application.</p>
+    <p>The Weather Warning System should be accessed at a different URL than what you're currently using.</p>
   </div>
   
-  <div class="alternatives">
-    <p>Alternative direct links:</p>
-    <a href="https://warningtest.oragewx.site" target="_blank">warningtest.oragewx.site (HTTPS)</a>
-    <a href="http://warningtest.oragewx.site" target="_blank">warningtest.oragewx.site (HTTP)</a>
+  <div class="form">
+    <p>Enter the correct domain for your Weather Warning System:</p>
+    <input type="text" id="customDomain" placeholder="example: app.weathersystem.com" />
+    <button onclick="navigateToCustomDomain()">Go to Site</button>
   </div>
   
-  <p style="margin-top: 40px; color: #666;">This static page is hosted on Netlify and serves as an entry point to the main application.</p>
+  <p>If you're the system administrator, please ensure you're using the correct URL to access your Weather Warning System.</p>
+  
+  <p style="margin-top: 40px; color: #666;">This static page is hosted on Netlify but your main application is likely on a different server.</p>
+  
+  <script>
+    function navigateToCustomDomain() {
+      const domain = document.getElementById('customDomain').value.trim();
+      if (domain) {
+        // Add https:// if not included
+        let url = domain;
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          url = 'https://' + url;
+        }
+        window.open(url, '_blank');
+      }
+    }
+  </script>
 </body>
 </html>
 EOF
