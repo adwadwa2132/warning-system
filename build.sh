@@ -1,62 +1,74 @@
 #!/bin/bash
 
-# Clean up any existing files
-rm -rf node_modules .next out package-lock.json
-
-# Clear any problematic environment variables
-unset NODE_OPTIONS
-
-# Set up environment variables safely
-export NEXT_TELEMETRY_DISABLED=1
-export NEXT_SKIP_TYPECHECKING=true
-export NEXT_SKIP_SWC=1
-export BABEL_ENV=production
-export NODE_ENV=production
-
-# Install dependencies without optional packages
-npm install --omit=optional --legacy-peer-deps
-
-# Create a site directory directly instead of using next build
-echo "Creating out directory structure..."
+# Create the output directory
+echo "Creating static output directory..."
 mkdir -p out
+rm -rf out/*
 
-# Create basic directories to satisfy Next.js plugin
-mkdir -p out/_next/static/chunks
-mkdir -p out/_next/static/css
-mkdir -p out/_next/static/media
-mkdir -p out/_next/static/images
-
-# Add dummy files to make Next.js plugin happy
-echo "{}" > out/_next/build-manifest.json
-echo "{}" > out/_next/routes-manifest.json
-touch out/_next/static/chunks/main.js
-touch out/_next/static/chunks/webpack.js
-touch out/_next/static/chunks/pages/_app.js
-touch out/_next/static/chunks/pages/index.js
-
-# Copy necessary static files
-echo "Copying static files..."
-mkdir -p out/static
-cp -r public/* out/ 2>/dev/null || :
-
-# Generate a basic HTML file to keep Netlify happy
-echo "Generating placeholder HTML..."
-cat > out/index.html << EOF
+# Generate a simple HTML file that redirects to the main site
+echo "Generating simple static site..."
+cat > out/index.html << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>Weather Warning System</title>
-  <meta http-equiv="refresh" content="0;url=https://warningtest.oragewx.site/index.html">
+  <meta http-equiv="refresh" content="0;url=https://warningtest.oragewx.site">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/_next/static/css/main.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      background-color: #f7f7f7;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 40px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #0070f3;
+    }
+    p {
+      font-size: 18px;
+      line-height: 1.5;
+    }
+    .button {
+      display: inline-block;
+      background-color: #0070f3;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 500;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-  <p>Redirecting to main site...</p>
-  <script>window.location.href = "https://warningtest.oragewx.site/index.html";</script>
+  <div class="container">
+    <h1>Weather Warning System</h1>
+    <p>You're being redirected to the main site.</p>
+    <p>If you are not redirected automatically, please click the button below:</p>
+    <a class="button" href="https://warningtest.oragewx.site">Go to Weather Warning System</a>
+  </div>
+  <script>
+    setTimeout(function() {
+      window.location.href = "https://warningtest.oragewx.site";
+    }, 1500);
+  </script>
 </body>
 </html>
 EOF
+
+# Create a netlify.redirects file as a backup redirection method
+echo "/* https://warningtest.oragewx.site/:splat 301!" > out/_redirects
 
 echo "Static site created successfully!"
 exit 0 
