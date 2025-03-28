@@ -474,11 +474,11 @@ function displayWarnings() {
       }).addTo(map);
       
       // Add popup
-      polygon.bindPopup(`
-        <strong>${warning.title}</strong><br>
-        ${warning.description}<br>
-        <small>Expires: ${formatDate(warning.expires)}</small>
-      `);
+      polygon.bindPopup(
+        '<strong>' + warning.title + '</strong><br>' +
+        warning.description + '<br>' +
+        '<small>Expires: ' + formatDate(warning.expires) + '</small>'
+      );
       
       warningLayers.push(polygon);
     }
@@ -511,13 +511,12 @@ function updateWarningsList() {
   // Create warning list items
   filteredWarnings.forEach(warning => {
     const warningItem = document.createElement('div');
-    warningItem.className = \`warning-item warning-severity-\${warning.severity}\`;
+    warningItem.className = 'warning-item warning-severity-' + warning.severity;
     
-    warningItem.innerHTML = \`
-      <h3>\${warning.title}</h3>
-      <p>\${warning.description}</p>
-      <small>Expires: \${formatDate(warning.expires)}</small>
-    \`;
+    warningItem.innerHTML = 
+      '<h3>' + warning.title + '</h3>' +
+      '<p>' + warning.description + '</p>' +
+      '<small>Expires: ' + formatDate(warning.expires) + '</small>';
     
     warningItem.addEventListener('click', () => {
       // Find the corresponding layer and open its popup
@@ -720,13 +719,13 @@ function displayAdminWarnings() {
       }).addTo(map);
       
       // Add popup with edit and delete options
-      polygon.bindPopup(\`
-        <strong>\${warning.title}</strong><br>
-        \${warning.description}<br>
-        <small>Expires: \${formatDate(warning.expires)}</small><br>
-        <button class="edit-warning" data-id="\${warning.id}">Edit</button>
-        <button class="delete-warning" data-id="\${warning.id}">Delete</button>
-      \`);
+      polygon.bindPopup(
+        '<strong>' + warning.title + '</strong><br>' +
+        warning.description + '<br>' +
+        '<small>Expires: ' + formatDate(warning.expires) + '</small><br>' +
+        '<button class="edit-warning" data-id="' + warning.id + '">Edit</button> ' +
+        '<button class="delete-warning" data-id="' + warning.id + '">Delete</button>'
+      );
       
       // Handle popup actions
       polygon.on('popupopen', function() {
@@ -794,7 +793,7 @@ function handleWarningSubmit(e) {
   const expiryTime = document.getElementById('expiryTime').value;
   
   // Create expiry date
-  const expires = new Date(\`\${expiryDate}T\${expiryTime}:00\`).toISOString();
+  const expires = new Date(expiryDate + 'T' + expiryTime + ':00').toISOString();
   
   // Create warning object
   const warning = {
@@ -863,20 +862,19 @@ function updateAdminWarningsList() {
     const isExpired = new Date(warning.expires) < new Date();
     
     const warningItem = document.createElement('div');
-    warningItem.className = \`warning-item warning-severity-\${warning.severity} \${isExpired ? 'expired' : ''}\`;
+    warningItem.className = 'warning-item warning-severity-' + warning.severity + (isExpired ? ' expired' : '');
     
-    warningItem.innerHTML = \`
-      <div class="flex justify-between items-center">
-        <h3>\${warning.title}</h3>
-        <div>
-          <button class="edit-btn" data-id="\${warning.id}">Edit</button>
-          <button class="delete-btn" data-id="\${warning.id}">Delete</button>
-        </div>
-      </div>
-      <p>\${warning.description}</p>
-      <small>Expires: \${formatDate(warning.expires)}</small>
-      \${isExpired ? '<span class="expired-tag">Expired</span>' : ''}
-    \`;
+    warningItem.innerHTML = 
+      '<div class="flex justify-between items-center">' +
+        '<h3>' + warning.title + '</h3>' +
+        '<div>' +
+          '<button class="edit-btn" data-id="' + warning.id + '">Edit</button> ' +
+          '<button class="delete-btn" data-id="' + warning.id + '">Delete</button>' +
+        '</div>' +
+      '</div>' +
+      '<p>' + warning.description + '</p>' +
+      '<small>Expires: ' + formatDate(warning.expires) + '</small>' +
+      (isExpired ? '<span class="expired-tag">Expired</span>' : '');
     
     // Add event listeners
     warningItem.querySelector('.edit-btn').addEventListener('click', function() {
