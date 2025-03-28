@@ -16,6 +16,14 @@
   NEXT_SKIP_SWC = "1"
   # Don't set NODE_OPTIONS here to avoid the flag error
 
+# Explicitly disable all plugins
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+  [plugins.inputs]
+    # Disable the plugin completely
+    enable = false
+    skipBuild = true
+
 # Redirect all paths to the main site
 [[redirects]]
   from = "/*"

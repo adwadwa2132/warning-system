@@ -20,6 +20,20 @@ npm install --omit=optional --legacy-peer-deps
 echo "Creating out directory structure..."
 mkdir -p out
 
+# Create basic directories to satisfy Next.js plugin
+mkdir -p out/_next/static/chunks
+mkdir -p out/_next/static/css
+mkdir -p out/_next/static/media
+mkdir -p out/_next/static/images
+
+# Add dummy files to make Next.js plugin happy
+echo "{}" > out/_next/build-manifest.json
+echo "{}" > out/_next/routes-manifest.json
+touch out/_next/static/chunks/main.js
+touch out/_next/static/chunks/webpack.js
+touch out/_next/static/chunks/pages/_app.js
+touch out/_next/static/chunks/pages/index.js
+
 # Copy necessary static files
 echo "Copying static files..."
 mkdir -p out/static
@@ -35,6 +49,7 @@ cat > out/index.html << EOF
   <title>Weather Warning System</title>
   <meta http-equiv="refresh" content="0;url=https://warningtest.oragewx.site/index.html">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/_next/static/css/main.css">
 </head>
 <body>
   <p>Redirecting to main site...</p>
