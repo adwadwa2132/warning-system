@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3002",
-    "build": "rm -rf .next out && NEXT_SKIP_SWC=1 BABEL_ENV=production NODE_ENV=production next build",
-    "export": "next export -o out",
+    "build": "rm -rf .next out && next build && next export",
     "start": "next start",
     "lint": "next lint"
   },
@@ -24,6 +23,9 @@
     "sharp": "^0.33.5"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-class-properties": "^7.18.6",
+    "@babel/plugin-proposal-private-methods": "^7.18.6",
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@types/leaflet": "^1.9.8",
     "@types/leaflet-draw": "^1.0.11",
     "@types/node": "^20",

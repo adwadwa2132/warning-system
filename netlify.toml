@@ -1,5 +1,5 @@
 [build]
-  command = "node build-static.js"
+  command = "NEXT_SKIP_SWC=1 BABEL_ENV=production NODE_ENV=production npm run build"
   publish = "out"
 
 [build.environment]
