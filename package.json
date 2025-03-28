@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3002",
-    "build": "rm -rf .next out && next build && next export -o out",
+    "build": "NEXT_SKIP_SWC=1 NODE_OPTIONS='--max_old_space_size=4096' next build",
+    "export": "next export -o out",
     "start": "next start",
     "lint": "next lint"
   },

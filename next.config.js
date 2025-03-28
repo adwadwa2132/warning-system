@@ -2,19 +2,17 @@
 const path = require('path');
 
 const nextConfig = {
-  // Disable type checking during build
+  // Disable type checking during build to speed up builds
   typescript: {
     ignoreBuildErrors: true,
   },
   
-  // Set the output directory 
+  // Keep the output directory as .next for proper Next.js build
   distDir: '.next',
   
-  // Use static export for more reliable builds on Netlify
+  // Temporarily enable static exports for Netlify
+  // We can remove this if we decide to use server components later
   output: 'export',
-  
-  // Add trailingSlash for cleaner URLs in static export
-  trailingSlash: true,
   
   // Configure image optimization for static export
   images: {
@@ -22,7 +20,7 @@ const nextConfig = {
     domains: ['openweathermap.org', 'unpkg.com'],
   },
   
-  // Disable ESLint
+  // Disable ESLint during builds
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -38,18 +36,17 @@ const nextConfig = {
       '@': path.resolve(__dirname),
     };
 
+    // Add basic loaders for CSS and SVG files
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ['@svgr/webpack'],
+    });
+
     // Add fallbacks for node polyfills
     config.resolve.fallback = {
       ...config.resolve.fallback,
       fs: false,
       path: false,
-    };
-
-    // Support older browsers
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      'react/jsx-runtime': 'react/jsx-runtime.js',
-      'react/jsx-dev-runtime': 'react/jsx-dev-runtime.js',
     };
 
     return config;
@@ -58,9 +55,15 @@ const nextConfig = {
   // Disable React strict mode to prevent double mounting
   reactStrictMode: false,
   
+  // Skip transpilation of node_modules since they should already be compiled
+  transpilePackages: [],
+
   // Simplify experimental features to avoid compilation issues
   experimental: {
-    optimizeCss: false, // Disable CSS optimization as it can cause issues
+    // Disable all experimental features to prevent hanging during builds
+    optimizeCss: false,
+    optimizePackageImports: false,
+    serverComponentsExternalPackages: [],
   }
 };
 
