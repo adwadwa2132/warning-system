@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "node build-static.js"
   publish = "out"
 
 [build.environment]
@@ -11,32 +11,7 @@
   NODE_VERSION = "18"
   NODE_OPTIONS = "--max_old_space_size=4096"
 
-# Netlify Function settings for Next.js SSR
-[functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["@node-rs/bcrypt", "@node-rs/argon2", "sharp", "canvas"]
-
-# For SPA fallback and SSR
-[[redirects]]
-  from = "/_next/static/*"
-  to = "/static/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/_next/*"
-  to = "/.netlify/functions/_next/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/server"
-  status = 200
-
+# Cache static assets
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
@@ -47,7 +22,12 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# Add security headers
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self' https://warningtest.oragewx.site; style-src 'self' 'unsafe-inline' https://unpkg.com; script-src 'self' 'unsafe-eval' 'unsafe-inline'; img-src 'self' data: https://*.openweathermap.org https://unpkg.com blob:; connect-src 'self' https://*.openweathermap.org https://api.rainviewer.com; frame-src 'self'; font-src 'self';" 
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; script-src 'self' 'unsafe-eval' 'unsafe-inline'; img-src 'self' data: https://*.openweathermap.org https://unpkg.com blob:; connect-src 'self' https://*.openweathermap.org https://api.rainviewer.com; frame-src 'self'; font-src 'self';" 

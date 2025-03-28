@@ -13,10 +13,13 @@ const nextConfig = {
   // Use static export for more reliable builds on Netlify
   output: 'export',
   
+  // Add trailingSlash for cleaner URLs in static export
+  trailingSlash: true,
+  
   // Configure image optimization for static export
   images: {
-    unoptimized: true,
-    formats: ['image/avif', 'image/webp'],
+    unoptimized: true, // Required for static export
+    domains: ['openweathermap.org', 'unpkg.com'],
   },
   
   // Disable ESLint
@@ -40,6 +43,13 @@ const nextConfig = {
       ...config.resolve.fallback,
       fs: false,
       path: false,
+    };
+
+    // Support older browsers
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      'react/jsx-runtime': 'react/jsx-runtime.js',
+      'react/jsx-dev-runtime': 'react/jsx-dev-runtime.js',
     };
 
     return config;
