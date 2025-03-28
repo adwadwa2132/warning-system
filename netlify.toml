@@ -10,19 +10,10 @@
   NEXT_PUBLIC_ADMIN_PASSWORD = "password"
   NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
-  # Turn off Next.js plugin to avoid SWC issues
+  # Force disable Next.js plugin
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
   # Skip SWC and use Babel instead
   NEXT_SKIP_SWC = "1"
-  # Don't set NODE_OPTIONS here to avoid the flag error
-
-# Explicitly disable all plugins
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-  [plugins.inputs]
-    # Disable the plugin completely
-    enable = false
-    skipBuild = true
 
 # Redirect all paths to the main site
 [[redirects]]
