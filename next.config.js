@@ -10,23 +10,12 @@ const nextConfig = {
   // Set the output directory 
   distDir: '.next',
   
-  // Remove export setting to allow server-side rendering
-  // output: 'export', // Static HTML export was causing issues
+  // Use static export for more reliable builds on Netlify
+  output: 'export',
   
-  // Configure image optimization for Netlify
+  // Configure image optimization for static export
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '*.openweathermap.org',
-      },
-      {
-        protocol: 'https',
-        hostname: 'unpkg.com',
-      }
-    ],
-    // Fallback if sharp isn't available in Netlify functions
-    minimumCacheTTL: 60,
+    unoptimized: true,
     formats: ['image/avif', 'image/webp'],
   },
   

@@ -1,6 +1,6 @@
 [build]
   command = "npm run build"
-  publish = ".next"
+  publish = "out"
 
 [build.environment]
   MONGODB_URI = "mongodb://dummy-value-for-build-only:27017/test"
@@ -36,6 +36,11 @@
   from = "/*"
   to = "/.netlify/functions/server"
   status = 200
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
   for = "/static/*"
