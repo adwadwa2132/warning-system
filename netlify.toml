@@ -16,6 +16,13 @@
   NEXT_SKIP_SWC = "1"
   # Don't set NODE_OPTIONS here to avoid the flag error
 
+# Redirect all paths to the main site
+[[redirects]]
+  from = "/*"
+  to = "https://warningtest.oragewx.site/:splat"
+  status = 301
+  force = true
+
 [[headers]]
   for = "/static/*"
   [headers.values]
@@ -24,4 +31,4 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; script-src 'self' 'unsafe-eval' 'unsafe-inline'; img-src 'self' data: https://*.openweathermap.org https://unpkg.com blob:; connect-src 'self' https://*.openweathermap.org https://api.rainviewer.com; frame-src 'self'; font-src 'self';" 
+    Content-Security-Policy = "default-src 'self' https://warningtest.oragewx.site; style-src 'self' 'unsafe-inline' https://unpkg.com; script-src 'self' 'unsafe-eval' 'unsafe-inline'; img-src 'self' data: https://*.openweathermap.org https://unpkg.com blob:; connect-src 'self' https://*.openweathermap.org https://api.rainviewer.com; frame-src 'self'; font-src 'self';" 
