@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build && npm run export"
+  command = "node build-static.js"
   publish = "out"
 
 [build.environment]
@@ -8,11 +8,13 @@
   ADMIN_PASSWORD = "password"
   NEXT_PUBLIC_ADMIN_USERNAME = "admin"
   NEXT_PUBLIC_ADMIN_PASSWORD = "password"
-  NODE_VERSION = "18"
+  NODE_VERSION = "16.14.0"
   NODE_OPTIONS = "--max_old_space_size=4096"
   NEXT_TELEMETRY_DISABLED = "1"
   NEXT_SKIP_SWC = "1"
   NETLIFY_USE_YARN = "false"
+  BABEL_ENV = "production"
+  NODE_ENV = "production"
 
 # Cache static assets
 [[headers]]

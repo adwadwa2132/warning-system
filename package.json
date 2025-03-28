@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3002",
-    "build": "NEXT_SKIP_SWC=1 NODE_OPTIONS='--max_old_space_size=4096' next build",
+    "build": "rm -rf .next out && NEXT_SKIP_SWC=1 BABEL_ENV=production NODE_ENV=production next build",
     "export": "next export -o out",
     "start": "next start",
     "lint": "next lint"
