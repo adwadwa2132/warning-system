@@ -1,7 +1,6 @@
 [build]
   publish = "out"
   command = "bash ./build.sh"
-  # Don't skip builds so content actually deploys
 
 [build.environment]
   MONGODB_URI = "mongodb://dummy-value-for-build-only:27017/test"
@@ -10,6 +9,8 @@
   NEXT_PUBLIC_ADMIN_USERNAME = "admin"
   NEXT_PUBLIC_ADMIN_PASSWORD = "password"
   NODE_VERSION = "18"
+  # This environment variable should disable the Next.js plugin
+  NETLIFY_NEXT_PLUGIN_SKIP = "true"
 
 # Redirect all paths to the main site
 [[redirects]]
