@@ -7,15 +7,16 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   
-  // Set the output directory for Netlify
+  // Set the output directory 
   distDir: '.next',
   
-  // Configure output for optimization
-  output: 'export', // Static HTML export
+  // Remove export setting to allow server-side rendering
+  // output: 'export', // Static HTML export was causing issues
   
   // Allow images from external domains
   images: {
-    unoptimized: true, // Required for static export
+    domains: ['openweathermap.org', 'unpkg.com'],
+    formats: ['image/avif', 'image/webp'],
   },
   
   // Disable ESLint
@@ -26,7 +27,7 @@ const nextConfig = {
   // Disable SWC compiler which is causing hangs
   swcMinify: false,
   
-  // Simply configure webpack with minimal settings
+  // Configure webpack with minimal settings
   webpack: (config) => {
     // Resolve path aliases
     config.resolve.alias = {

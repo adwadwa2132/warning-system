@@ -1,6 +1,6 @@
 [build]
-  publish = "out"
-  command = "bash ./build.sh"
+  command = "npm run build"
+  publish = ".next"
 
 [build.environment]
   MONGODB_URI = "mongodb://dummy-value-for-build-only:27017/test"
@@ -9,10 +9,32 @@
   NEXT_PUBLIC_ADMIN_USERNAME = "admin"
   NEXT_PUBLIC_ADMIN_PASSWORD = "password"
   NODE_VERSION = "18"
-  # This environment variable should disable the Next.js plugin
-  NETLIFY_NEXT_PLUGIN_SKIP = "true"
 
-# No redirects to avoid redirect loops
+# Netlify Function settings for Next.js SSR
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["@node-rs/bcrypt", "@node-rs/argon2", "sharp"]
+
+# For SPA fallback and SSR
+[[redirects]]
+  from = "/_next/static/*"
+  to = "/static/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/_next/*"
+  to = "/.netlify/functions/_next/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/server"
+  status = 200
 
 [[headers]]
   for = "/static/*"
