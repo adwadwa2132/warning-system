@@ -13,9 +13,20 @@ const nextConfig = {
   // Remove export setting to allow server-side rendering
   // output: 'export', // Static HTML export was causing issues
   
-  // Allow images from external domains
+  // Configure image optimization for Netlify
   images: {
-    domains: ['openweathermap.org', 'unpkg.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.openweathermap.org',
+      },
+      {
+        protocol: 'https',
+        hostname: 'unpkg.com',
+      }
+    ],
+    // Fallback if sharp isn't available in Netlify functions
+    minimumCacheTTL: 60,
     formats: ['image/avif', 'image/webp'],
   },
   

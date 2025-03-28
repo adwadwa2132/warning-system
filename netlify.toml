@@ -9,11 +9,12 @@
   NEXT_PUBLIC_ADMIN_USERNAME = "admin"
   NEXT_PUBLIC_ADMIN_PASSWORD = "password"
   NODE_VERSION = "18"
+  NODE_OPTIONS = "--max_old_space_size=4096"
 
 # Netlify Function settings for Next.js SSR
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["@node-rs/bcrypt", "@node-rs/argon2", "sharp"]
+  external_node_modules = ["@node-rs/bcrypt", "@node-rs/argon2", "sharp", "canvas"]
 
 # For SPA fallback and SSR
 [[redirects]]
