@@ -12,12 +12,7 @@
   # This environment variable should disable the Next.js plugin
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
 
-# Redirect all paths to the main site
-[[redirects]]
-  from = "/*"
-  to = "https://warningtest.oragewx.site/:splat"
-  status = 301
-  force = true
+# No redirects to avoid redirect loops
 
 [[headers]]
   for = "/static/*"
