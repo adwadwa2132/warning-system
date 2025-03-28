@@ -35,7 +35,7 @@ try {
   const buildEnv = {
     ...process.env,
     NEXT_SKIP_SWC: '1',
-    NODE_OPTIONS: '--max_old_space_size=4096 --no-compilation-cache',
+    NODE_OPTIONS: '--max_old_space_size=4096',
     NEXT_TELEMETRY_DISABLED: '1'
   };
   
