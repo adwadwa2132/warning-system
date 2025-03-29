@@ -25,8 +25,8 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   
-  // Disable SWC compiler which is causing hangs
-  swcMinify: false,
+  // Enable SWC compiler for next/font compatibility
+  swcMinify: true,
   
   // Configure webpack with minimal settings
   webpack: (config) => {
