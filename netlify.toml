@@ -8,7 +8,7 @@
   ADMIN_PASSWORD = "password"
   NEXT_PUBLIC_ADMIN_USERNAME = "admin"
   NEXT_PUBLIC_ADMIN_PASSWORD = "password"
-  NODE_VERSION = "16.14.0"
+  NODE_VERSION = "18.17.0"
   NODE_OPTIONS = "--max_old_space_size=4096"
   NEXT_TELEMETRY_DISABLED = "1"
   NEXT_SKIP_SWC = "1"
