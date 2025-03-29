@@ -1,5 +1,5 @@
 [build]
-  command = "npm install @babel/plugin-proposal-class-properties @babel/plugin-proposal-private-methods @babel/plugin-proposal-private-property-in-object core-js@3 jsonwebtoken @types/jsonwebtoken && BABEL_ENV=production NODE_ENV=production npm run build"
+  command = "npm install tailwindcss autoprefixer postcss @babel/plugin-proposal-class-properties @babel/plugin-proposal-private-methods @babel/plugin-proposal-private-property-in-object core-js@3 jsonwebtoken @types/jsonwebtoken && BABEL_ENV=production NODE_ENV=production npm run build"
   publish = "out"
 
 [build.environment]
