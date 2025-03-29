@@ -1,5 +1,5 @@
 [build]
-  command = "npm install @babel/plugin-proposal-class-properties @babel/plugin-proposal-private-methods @babel/plugin-proposal-private-property-in-object core-js@3 && NEXT_SKIP_SWC=1 BABEL_ENV=production NODE_ENV=production npm run build"
+  command = "npm install @babel/plugin-proposal-class-properties @babel/plugin-proposal-private-methods @babel/plugin-proposal-private-property-in-object core-js@3 jsonwebtoken @types/jsonwebtoken && NEXT_SKIP_SWC=1 BABEL_ENV=production NODE_ENV=production npm run build"
   publish = "out"
 
 [build.environment]
@@ -15,6 +15,7 @@
   NETLIFY_USE_YARN = "false"
   BABEL_ENV = "production"
   NODE_ENV = "production"
+  JWT_SECRET = "your-secret-key-for-jwt-auth"
 
 # Cache static assets
 [[headers]]

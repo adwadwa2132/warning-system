@@ -62,7 +62,7 @@ const nextConfig = {
   experimental: {
     // Disable all experimental features to prevent hanging during builds
     optimizeCss: false,
-    optimizePackageImports: false,
+    optimizePackageImports: [],
     serverComponentsExternalPackages: [],
   }
 };
